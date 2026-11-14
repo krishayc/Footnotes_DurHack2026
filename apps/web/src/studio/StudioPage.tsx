@@ -127,9 +127,12 @@ export function StudioPage() {
 
         <aside className="studio__side">
           {debug && <MusicDebug onClose={() => setDebug(false)} />}
+          {/* Until the beat plays, the next thing to do (sound, pace, start) comes first.
+              Once it plays, the live score and layers move to the top. */}
+          {!a.playing && <ControlPanel />}
           <SyncPanel />
           <LayersPanel />
-          <ControlPanel />
+          {a.playing && <ControlPanel />}
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}
           {live && !phoneHere && <JoinCard room={room} />}
