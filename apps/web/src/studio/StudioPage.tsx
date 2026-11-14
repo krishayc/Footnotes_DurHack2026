@@ -4,6 +4,13 @@ import { LogoMark } from '../ui/Logo';
 import { JoinCard } from './JoinCard';
 import { LiveLane } from './LiveLane';
 import { useStudioLink, type StudioLinkSnapshot } from './link';
+import { useStore } from '../shared/store';
+import { audio } from './audio/engine';
+import { ControlPanel } from './ControlPanel';
+import { ModeBar, SimControls, TapPad } from './ModeBar';
+import { session } from './session';
+import { stepBus } from './steps';
+import { useStudioStats } from './useStudioStats';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -24,12 +31,27 @@ function useRoomCode(): string {
 }
 
 /**
- * The laptop Studio (for judges). Stage 3: live link to the phone with clock sync.
- * Later stages add audio, calibration, the visual score, modes and Under the hood.
+ * The laptop Studio (for judges). Stage 4: sound, calibration, the steady beat, and the
+ * three step sources (live phone, tap mode, simulated walker).
+ * Later stages add sync scoring, the adaptive music, the visual score and Under the hood.
  */
 export function StudioPage() {
   const room = useRoomCode();
   const { link, snap } = useStudioLink(room);
+  const { mode } = useStore(stepBus.settings);
+  const sess = useStore(session.state);
+  const a = useStore(audio.state);
+  const stats = useStudioStats();
+
+  useEffect(() => stepBus.attachLink(link), [link]);
+  useEffect(() => {
+    // Dev only: poke at the engine from the browser console (window.__fn).
+    if (import.meta.env.DEV) Object.assign(window, { __fn: { audio, stepBus, session, link } });
+  }, [link]);
+  useEffect(() => {
+    session.attachLink(link);
+    return () => session.attachLink(null);
+  }, [link]);
 
   useEffect(() => {
     document.documentElement.style.background = 'var(--d-bg-0)';
@@ -39,6 +61,7 @@ export function StudioPage() {
   }, []);
 
   const phoneHere = snap.status === 'connected' && snap.peerConnected;
+  const live = mode === 'live';
 
   return (
     <div className="theme-dark studio">
@@ -59,67 +82,95 @@ export function StudioPage() {
       </header>
 
       <main className="studio__body">
-        <section className="studio__stage" aria-label="Live from the phone">
-          <h2 className="studio__h">Live from the phone</h2>
+        <section className="studio__stage" aria-label="The beat and the steps">
+          <h2 className="studio__h">The beat and the steps, live</h2>
           <LiveLane link={link} />
           <p className="studio__legend">
-            <span className="legend-dot" aria-hidden="true" /> a step, placed where the foot landed
-            <span className="legend-ring" aria-hidden="true" /> inferred step (one leg felt)
-            <span className="legend-line" aria-hidden="true" /> movement felt by the phone
+            <span className="legend-bar" aria-hidden="true" /> a beat (always steady)
+            <span className="legend-dot legend-dot--step" aria-hidden="true" /> a step, where the
+            foot landed
+            {live && (
+              <>
+                <span className="legend-line" aria-hidden="true" /> movement felt by the phone
+              </>
+            )}
           </p>
         </section>
 
         <aside className="studio__side">
-          {!phoneHere && <JoinCard room={room} />}
+          <ControlPanel />
+          {mode === 'tap' && <TapPad />}
+          {mode === 'sim' && <SimControls />}
+          {live && !phoneHere && <JoinCard room={room} />}
+
           <div className="tiles">
-            <Tile label="Steps" value={snap.stepCount || '-'} />
             <Tile
-              label="Their pace"
-              value={snap.cadenceSpm && fresh(snap) ? Math.round(snap.cadenceSpm) : '-'}
+              label="Their pace now"
+              value={stats.paceSpm ? Math.round(stats.paceSpm) : '-'}
               unit="steps/min"
             />
             <Tile
-              label="Round trip"
-              value={snap.lastRtt !== null ? Math.round(snap.lastRtt) : '-'}
+              label="The beat"
+              value={sess.phase === 'ready' ? sess.tempo : '-'}
+              unit="BPM"
+              hint={a.playing ? 'playing' : sess.phase === 'ready' ? 'ready' : 'not set yet'}
+            />
+            <Tile
+              label="Beat steadiness"
+              value={stats.beatSpreadMs !== null ? stats.beatSpreadMs.toFixed(2) : '-'}
               unit="ms"
-              hint={snap.clock ? `best ${Math.round(snap.clock.rtt)} ms` : undefined}
+              hint="spread of beat gaps"
             />
-            <Tile
-              label="Step arrives after"
-              value={snap.stepLatencyMs !== null ? Math.round(snap.stepLatencyMs) : '-'}
-              unit="ms"
-              hint="detection + network"
-            />
-            <Tile
-              label="Clock offset"
-              value={snap.clock ? (snap.clock.offset / 1000).toFixed(3) : '-'}
-              unit="s"
-              hint={snap.clock ? `± ${Math.round(snap.clock.uncertainty)} ms` : 'phone − laptop'}
-            />
-            <Tile
-              label="Phone sensor"
-              value={snap.phone?.rateHz ? Math.round(snap.phone.rateHz) : '-'}
-              unit="Hz"
-              hint={
-                snap.phone
-                  ? snap.phone.motion === 'granted'
-                    ? snap.phone.wakeLock
-                      ? 'on, screen kept awake'
-                      : 'on, screen may sleep'
-                    : 'sensor not started yet'
-                  : undefined
-              }
-            />
+            <Tile label="Steps" value={stepBus.total || '-'} hint="since the page opened" />
+            {live && (
+              <>
+                <Tile
+                  label="Round trip"
+                  value={snap.lastRtt !== null ? Math.round(snap.lastRtt) : '-'}
+                  unit="ms"
+                  hint={snap.clock ? `best ${Math.round(snap.clock.rtt)} ms` : undefined}
+                />
+                <Tile
+                  label="Step arrives after"
+                  value={snap.stepLatencyMs !== null ? Math.round(snap.stepLatencyMs) : '-'}
+                  unit="ms"
+                  hint="detection + network"
+                />
+                <Tile
+                  label="Clock offset"
+                  value={snap.clock ? (snap.clock.offset / 1000).toFixed(3) : '-'}
+                  unit="s"
+                  hint={
+                    snap.clock ? `± ${Math.round(snap.clock.uncertainty)} ms` : 'phone − laptop'
+                  }
+                />
+                <Tile
+                  label="Phone sensor"
+                  value={snap.phone?.rateHz ? Math.round(snap.phone.rateHz) : '-'}
+                  unit="Hz"
+                  hint={
+                    snap.phone
+                      ? snap.phone.motion === 'granted'
+                        ? snap.phone.wakeLock
+                          ? 'on, screen kept awake'
+                          : 'on, screen may sleep'
+                        : 'sensor not started yet'
+                      : undefined
+                  }
+                />
+              </>
+            )}
           </div>
-          {phoneHere && <JoinCard room={room} compact />}
+          {live && phoneHere && <JoinCard room={room} compact />}
         </aside>
       </main>
+
+      <footer className="studio__footer">
+        <ModeBar />
+      </footer>
     </div>
   );
 }
-
-const fresh = (s: StudioLinkSnapshot) =>
-  s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
 
 function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
   let text: string;

@@ -25,7 +25,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 1     | Phone sensor page                    | Done   |
 | 2     | Step detection                       | Done   |
 | 3     | Phone to laptop link + clock sync    | Done   |
-| 4     | Calibration + steady beat            |        |
+| 4     | Calibration + steady beat            | Done   |
 | 5     | Sync scoring                         |        |
 | 6     | Adaptive arrangement                 |        |
 | 7     | Visual score + patient screens       |        |
@@ -83,6 +83,21 @@ packages/shared/     message protocol, room codes, and DSP (step detector + test
 scripts/daphnet/     dataset preprocessing + freeze-index evaluation
 docs/                research notes, HTTPS setup, demo script, pitch
 ```
+
+## Calibration and the steady beat
+
+1. **Find their pace:** the walker walks naturally for 20 s with no music. We drop the first 3
+   steps (starting is the least typical part) and take the **median** gap between steps, so a
+   missed or doubled step barely matters. Too few steps or very uneven timing gets a kind
+   "let's try again" note.
+2. **Tempo = pace × (1 + offset)**, default +5%, adjustable 0 to +15%, clamped to 70 to 130 BPM.
+   "A bit slower / faster" nudges by 2 BPM; any change glides over 4 beats.
+3. **The beat leads.** Tone.js schedules each beat on the audio hardware clock, so it cannot
+   waver even if the page is busy. Measured: beats exactly 594.059 ms apart at 101 BPM, spread
+   0.000 ms on the audio clock (0.085 ms after converting to the step clock).
+4. **Fallbacks:** Tap mode (spacebar or a big pad = one step) and a Simulated walker with
+   adjustable pace and unevenness. Every step source feeds the same "step bus", so everything
+   downstream works the same whichever is active.
 
 ## Clock sync (phone ↔ laptop)
 

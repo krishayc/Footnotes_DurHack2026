@@ -1,20 +1,26 @@
 /**
- * Stage 3 live view: what the phone feels, drawn on the LAPTOP's clock.
+ * The live lane: the beat and the walker's steps on one timeline (laptop clock).
  *
- * Top: the phone's overall movement (from accel batches). Bottom: a dot for every step.
- * Everything arrives in phone time and is shifted by the clock-sync offset, so the dots sit
- * where the foot actually landed, a little behind "now" (the right edge) because of
- * detection + network delay. That gap is the "step arrives after" number in the side panel.
+ *  - Faint vertical lines + marigold rounded bars: the beats. Upcoming beats are drawn a
+ *    little ahead of "now" (the bright line), so you can see the steady grid coming.
+ *  - Green dots: steps, from whichever source is active (phone, taps, simulated walker),
+ *    placed where the foot landed. A step on a beat line is in time.
+ *  - Grey line (live phone only): the movement the phone felt.
+ *
+ * Stage 7 replaces this with the full visual score; the timing logic stays the same.
  */
 import { useEffect, useRef } from 'react';
+import { audio } from './audio/engine';
 import type { StudioLink } from './link';
+import { stepBus } from './steps';
 
 interface Props {
   link: StudioLink;
-  windowMs?: number;
+  pastMs?: number;
+  futureMs?: number;
 }
 
-export function LiveLane({ link, windowMs = 8000 }: Props) {
+export function LiveLane({ link, pastMs = 7000, futureMs = 1200 }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -41,128 +47,156 @@ export function LiveLane({ link, windowMs = 8000 }: Props) {
     const draw = () => {
       raf = requestAnimationFrame(draw);
       const now = performance.now();
-      const t0 = now - windowMs;
+      const t0 = now - pastMs;
+      const t1 = now + futureMs;
+      const span = t1 - t0;
+      const xOf = (t: number) => ((t - t0) / span) * w;
+      const mode = stepBus.settings.get().mode;
       const est = link.clock.current;
-      const xOf = (t: number) => ((t - t0) / windowMs) * w;
 
       ctx.fillStyle = '#13201C';
       ctx.fillRect(0, 0, w, h);
 
-      // Seconds grid.
-      ctx.strokeStyle = '#1F302A';
-      ctx.lineWidth = 1;
-      for (let s = Math.ceil(t0 / 1000) * 1000; s <= now; s += 1000) {
-        const x = Math.round(xOf(s)) + 0.5;
+      const signalTop = 28;
+      const signalH = h * 0.5;
+      const laneY = signalTop + signalH + (h - signalTop - signalH) / 2;
+
+      // ---- Beats: past ones from the log, future ones extrapolated from the last. ----
+      const playing = audio.state.get().playing;
+      const beatTimes: { t: number; first: boolean }[] = [];
+      if (playing) {
+        for (const b of audio.beats)
+          if (b.t >= t0) beatTimes.push({ t: b.t, first: b.beatInBar === 0 });
+        const last = audio.beats[audio.beats.length - 1];
+        if (last) {
+          const period = audio.periodMs;
+          for (let k = 1, t = last.t + period; t <= t1; k++, t += period) {
+            beatTimes.push({ t, first: (last.beatInBar + k) % 4 === 0 });
+          }
+        }
+      }
+      for (const b of beatTimes) {
+        const x = Math.round(xOf(b.t)) + 0.5;
+        const future = b.t > now;
+        ctx.globalAlpha = future ? 0.35 : 1;
+        ctx.strokeStyle = b.first ? '#2F4840' : '#22332D';
+        ctx.lineWidth = b.first ? 2 : 1;
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, h);
         ctx.stroke();
-      }
-
-      if (!est) {
-        ctx.fillStyle = '#B9C7C0';
-        ctx.font = '600 20px "Atkinson Hyperlegible", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(
-          link.conn.getSnapshot().peerConnected ? 'Syncing clocks...' : 'Waiting for the phone...',
-          w / 2,
-          h / 2,
-        );
-        return;
-      }
-
-      const off = est.offset; // phone - laptop
-      const signalTop = 24;
-      const signalH = h * 0.58;
-      const laneY = signalTop + signalH + (h - signalTop - signalH) / 2;
-
-      // Movement line.
-      const acc = link.accel;
-      let vmin = Infinity;
-      let vmax = -Infinity;
-      acc.forEachSince(t0 + off, (i) => {
-        const m = Math.hypot(acc.x[i], acc.y[i], acc.z[i]);
-        if (m < vmin) vmin = m;
-        if (m > vmax) vmax = m;
-      });
-      if (vmin !== Infinity) {
-        lo += (Math.min(vmin, 8) - 1 - lo) * 0.06;
-        hi += (Math.max(vmax, 12) + 1 - hi) * 0.06;
-      }
-      const yOf = (v: number) => signalTop + (1 - (v - lo) / (hi - lo)) * signalH;
-      ctx.strokeStyle = '#6E9486';
-      ctx.lineWidth = 2;
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      let first = true;
-      acc.forEachSince(t0 + off, (i) => {
-        const x = xOf(acc.t[i] - off);
-        const y = yOf(Math.hypot(acc.x[i], acc.y[i], acc.z[i]));
-        if (first) {
-          ctx.moveTo(x, y);
-          first = false;
-        } else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-
-      // Steps lane.
-      ctx.strokeStyle = '#22332D';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, laneY);
-      ctx.lineTo(w, laneY);
-      ctx.stroke();
-
-      for (const s of link.steps) {
-        const t = s.phoneT - off;
-        if (t < t0) continue;
-        const x = xOf(t);
-        // Gentle fade-in over 300 ms after arrival.
-        const age = Math.min(1, (now - s.receivedAt) / 300);
-        ctx.globalAlpha = age;
-        // Faint line up into the signal so you can see which bump made the step.
-        ctx.strokeStyle = 'rgba(242, 181, 68, 0.25)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, signalTop);
-        ctx.lineTo(x, laneY - 12);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(x, laneY, 9, 0, Math.PI * 2);
-        if (s.inferred) {
-          ctx.strokeStyle = '#F2B544';
-          ctx.lineWidth = 2.5;
-          ctx.stroke();
-        } else {
-          ctx.fillStyle = '#F2B544';
-          ctx.fill();
-        }
+        // Marigold rounded bar in the steps lane.
+        ctx.fillStyle = '#F2B544';
+        const bw = b.first ? 8 : 6;
+        roundRect(ctx, x - bw / 2, laneY - 26, bw, 52, bw / 2);
+        ctx.fill();
         ctx.globalAlpha = 1;
       }
 
-      // "Now" edge.
-      ctx.strokeStyle = '#F1F3EE';
-      ctx.globalAlpha = 0.5;
+      // ---- Movement line (live phone only, once clocks are synced). ----
+      if (mode === 'live' && est) {
+        const off = est.offset;
+        const acc = link.accel;
+        let vmin = Infinity;
+        let vmax = -Infinity;
+        acc.forEachSince(t0 + off, (i) => {
+          const m = Math.hypot(acc.x[i], acc.y[i], acc.z[i]);
+          if (m < vmin) vmin = m;
+          if (m > vmax) vmax = m;
+        });
+        if (vmin !== Infinity) {
+          lo += (Math.min(vmin, 8) - 1 - lo) * 0.06;
+          hi += (Math.max(vmax, 12) + 1 - hi) * 0.06;
+        }
+        const yOf = (v: number) => signalTop + (1 - (v - lo) / (hi - lo)) * signalH;
+        ctx.strokeStyle = '#4F6A60';
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        let first = true;
+        acc.forEachSince(t0 + off, (i) => {
+          const x = xOf(acc.t[i] - off);
+          const y = yOf(Math.hypot(acc.x[i], acc.y[i], acc.z[i]));
+          if (first) {
+            ctx.moveTo(x, y);
+            first = false;
+          } else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      // ---- Steps. ----
+      for (const s of stepBus.recent) {
+        if (s.t < t0 || s.t > t1) continue;
+        const x = xOf(s.t);
+        ctx.beginPath();
+        ctx.arc(x, laneY, 10, 0, Math.PI * 2);
+        if (s.inferred) {
+          ctx.strokeStyle = '#7FD1A8';
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = '#7FD1A8';
+          ctx.fill();
+        }
+      }
+
+      // ---- "Now" line. ----
+      const xn = xOf(now);
+      ctx.strokeStyle = 'rgba(241, 243, 238, 0.55)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(w - 1, 0);
-      ctx.lineTo(w - 1, h);
+      ctx.moveTo(xn, 0);
+      ctx.lineTo(xn, h);
       ctx.stroke();
-      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#B9C7C0';
+      ctx.font = '600 14px "Atkinson Hyperlegible", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('now', xn, 18);
+
+      // ---- Gentle hints when there is nothing to show. ----
+      let hint: string | null = null;
+      if (mode === 'live' && !link.conn.getSnapshot().peerConnected)
+        hint = 'Waiting for the phone...';
+      else if (mode === 'live' && !est) hint = 'Syncing clocks...';
+      else if (stepBus.recent.length === 0 && !playing)
+        hint = mode === 'tap' ? 'Press the spacebar for each step' : 'Steps will appear here';
+      if (hint) {
+        ctx.fillStyle = '#B9C7C0';
+        ctx.font = '600 20px "Atkinson Hyperlegible", sans-serif';
+        ctx.fillText(hint, w / 2, signalTop + signalH / 2);
+      }
     };
     raf = requestAnimationFrame(draw);
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [link, windowMs]);
+  }, [link, pastMs, futureMs]);
 
   return (
     <canvas
       ref={ref}
       className="lane"
       role="img"
-      aria-label="Live movement from the phone with each step marked, on the laptop's clock"
+      aria-label="Live timeline: the steady beat and each step, on the laptop's clock"
     />
   );
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
