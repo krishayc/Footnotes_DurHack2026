@@ -129,6 +129,7 @@ function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
       snap.status === 'connecting'
         ? 'Connecting...'
         : 'We lost the server connection. Trying again...';
+    if (snap.attempts > 1) text += ` (try ${snap.attempts})`;
     color = 'var(--d-slightly-off)';
   } else if (snap.status === 'error') {
     text = snap.error ?? 'Connection problem';
@@ -141,7 +142,7 @@ function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
     color = 'var(--d-on-time)';
   }
   return (
-    <span className="studio__status" role="status">
+    <span className="studio__status" role="status" title={snap.url}>
       <span className="dot" style={{ color }} aria-hidden="true" />
       {text}
     </span>

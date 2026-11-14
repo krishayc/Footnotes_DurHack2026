@@ -47,6 +47,8 @@ function send(ws: WebSocket | undefined, msg: ServerMsg) {
   if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
 }
 const other = (role: Role): Role => (role === 'sensor' ? 'studio' : 'sensor');
+const log = (room: string, text: string) =>
+  console.log(`${new Date().toLocaleTimeString()} [room ${room}] ${text}`);
 
 // ---------- http ----------
 const app = express();
@@ -139,6 +141,7 @@ wss.on('connection', (ws) => {
       role = msg.role;
 
       const peer = room[other(msg.role)];
+      log(code, `${msg.role} joined${peer ? ` (${other(msg.role)} already here)` : ''}`);
       send(ws, { type: 'hello', room: code, role: msg.role, peerConnected: !!peer });
       send(peer, { type: 'peer', connected: true, role: msg.role });
       return;
@@ -159,6 +162,7 @@ wss.on('connection', (ws) => {
     const room = rooms.get(roomCode);
     if (!room || room[role] !== ws) return;
     delete room[role];
+    log(roomCode, `${role} left`);
     send(room[other(role)], { type: 'peer', connected: false, role });
     if (!room.sensor && !room.studio) rooms.delete(roomCode);
   });
