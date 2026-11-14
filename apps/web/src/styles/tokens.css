@@ -1,0 +1,99 @@
+/*
+ * Footnotes design tokens (from brief section 7.10).
+ * Every colour, size and duration in the app should come from here.
+ * Fonts are bundled locally via @fontsource (imported in main.tsx) so the demo works offline.
+ */
+:root {
+  /* ---- light (patient phone) ---- */
+  --c-bg: #f1f3ee; /* soft sage paper */
+  --c-card: #ffffff;
+  --c-card-border: #e1e7e2;
+  --c-btn2-border: #c9d3cd;
+  --c-ink: #18211e;
+  --c-muted: #3f4b46;
+  --c-muted-2: #4a5752;
+  --c-primary: #1e5a4c; /* deep green, white text on it */
+  --c-on-primary: #ffffff;
+  --c-primary-tint: #dce7e1;
+  --c-highlight: #f2b544; /* marigold, ALWAYS dark ink on it */
+  --c-on-highlight: #18211e;
+  --c-focus: #1e5a4c;
+
+  /* ---- dark (walking screen + laptop studio) ---- */
+  --d-bg-0: #0f1916;
+  --d-bg-1: #13201c;
+  --d-bg-2: #17251f;
+  --d-bg-3: #1a2a25;
+  --d-border: #22332d;
+  --d-border-strong: #2f4840;
+  --d-text: #f1f3ee;
+  --d-muted: #b9c7c0;
+  --d-on-time: #7fd1a8;
+  --d-slightly-off: #e7c98b;
+  --d-note-1: #6e9486;
+  --d-note-2: #9fb5ac;
+  --d-note-3: #4f6a60;
+
+  /* ---- type ---- */
+  --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --fs-min: 18px; /* nothing on the phone goes below this */
+  --fs-body: 20px;
+  --fs-body-lg: 22px;
+  --fs-h3: 28px;
+  --fs-h2: 36px;
+  --fs-h1: 46px;
+  --fs-huge: 72px;
+  --lh-body: 1.45;
+  --lh-tight: 1.1;
+
+  /* ---- spacing scale (4px base) ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px; /* phone screen padding */
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
+  --s-10: 72px;
+
+  /* ---- radii ---- */
+  --r-btn: 26px;
+  --r-btn-lg: 30px;
+  --r-card: 24px;
+  --r-pill: 999px;
+
+  /* ---- touch targets (accessibility rules, 7.10) ---- */
+  --tap-min: 84px; /* any primary button */
+  --tap-hero: 128px; /* "Start a walk" */
+  --tap-stop: 168px; /* stop area */
+  --tap-gap: 18px; /* gap between targets (14-20px) */
+  --icon-btn: 64px; /* square speaker button */
+
+  /* ---- motion: calm only ---- */
+  --t-fast: 160ms;
+  --t-med: 280ms;
+  --t-slow: 600ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  --shadow-card: 0 1px 0 rgba(24, 33, 30, 0.04), 0 8px 24px -16px rgba(24, 33, 30, 0.25);
+}
+
+/* Larger text setting (Settings > Text size: Extra large). */
+:root[data-text-size='xl'] {
+  --fs-body: 24px;
+  --fs-body-lg: 26px;
+  --fs-h3: 32px;
+  --fs-h2: 40px;
+  --fs-h1: 50px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-med: 0ms;
+    --t-slow: 0ms;
+  }
+}

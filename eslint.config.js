@@ -1,0 +1,24 @@
+// Flat ESLint config for the whole monorepo.
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
+
+export default tseslint.config(
+  { ignores: ['**/dist/**', '**/node_modules/**', 'apps/web/public/**'] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    languageOptions: { globals: globals.browser },
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+  {
+    files: ['apps/server/**/*.ts', 'scripts/**/*.{ts,js}', '*.js'],
+    languageOptions: { globals: globals.node },
+  },
+);

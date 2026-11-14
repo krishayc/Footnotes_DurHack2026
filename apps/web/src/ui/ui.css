@@ -1,0 +1,148 @@
+/* ---------- Buttons ---------- */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--s-4) var(--s-6);
+  border-radius: var(--r-btn);
+  border: 2px solid transparent;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--fs-body-lg);
+  line-height: 1.2;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation; /* no double-tap zoom delay */
+  transition:
+    transform var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+.btn:active,
+.btn[data-pressed='true'] {
+  transform: scale(0.985);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn--primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+.btn--primary:hover {
+  background: #194d41;
+}
+
+.btn--secondary {
+  background: var(--c-card);
+  color: var(--c-ink);
+  border-color: var(--c-btn2-border);
+}
+.btn--secondary:hover {
+  background: #f8faf7;
+}
+
+.btn--hero {
+  min-height: var(--tap-hero);
+  border-radius: var(--r-btn-lg);
+  justify-content: flex-start;
+  padding: var(--s-5) var(--s-6);
+}
+
+.btn__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.btn__title {
+  font-size: var(--fs-h3);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.btn__sub {
+  font-size: var(--fs-min);
+  font-weight: 400;
+  opacity: 0.92;
+}
+
+/* Marigold disc that holds an icon inside the hero button. */
+.btn__disc {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--c-highlight);
+  color: var(--c-on-highlight);
+}
+
+/* Dark-surface variants (Studio). */
+.theme-dark .btn--secondary {
+  background: var(--d-bg-2);
+  color: var(--d-text);
+  border-color: var(--d-border-strong);
+}
+.theme-dark .btn--secondary:hover {
+  background: var(--d-bg-3);
+}
+.btn--highlight {
+  background: var(--c-highlight);
+  color: var(--c-on-highlight);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--c-card);
+  border: 2px solid var(--c-card-border);
+  border-radius: var(--r-card);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-card);
+}
+.theme-dark .card {
+  background: var(--d-bg-1);
+  border-color: var(--d-border);
+  box-shadow: none;
+}
+
+/* ---------- Pills / chips ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-min);
+  font-weight: 700;
+  border: 2px solid currentColor;
+}
+
+/* ---------- Status dot (always paired with text) ---------- */
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* ---------- Brand ---------- */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+}
