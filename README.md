@@ -24,7 +24,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 0     | Plan, scaffold, design tokens, HTTPS | Done   |
 | 1     | Phone sensor page                    | Done   |
 | 2     | Step detection                       | Done   |
-| 3     | Phone to laptop link + clock sync    |        |
+| 3     | Phone to laptop link + clock sync    | Done   |
 | 4     | Calibration + steady beat            |        |
 | 5     | Sync scoring                         |        |
 | 6     | Adaptive arrangement                 |        |
@@ -52,7 +52,11 @@ npm run demo           # http://localhost:8787
 npm run tunnel         # public https URL for the phone
 ```
 
-Tests: `npm test` (step detector on synthetic walks with known step times).
+Tests: `npm test` (step detector on synthetic walks with known step times; clock sync on a
+simulated jittery network).
+
+No phone handy? `npm run fake-phone -- ABCD` joins room ABCD as a pretend phone that walks at
+105 steps/min (add a tunnel URL as the second argument to go through Cloudflare).
 
 Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
 
@@ -79,6 +83,17 @@ packages/shared/     message protocol, room codes, and DSP (step detector + test
 scripts/daphnet/     dataset preprocessing + freeze-index evaluation
 docs/                research notes, HTTPS setup, demo script, pitch
 ```
+
+## Clock sync (phone ↔ laptop)
+
+The phone stamps each step with its own clock; the laptop plays the beat on its clock. To
+compare them, the Studio repeatedly pings the phone (5×/s for 3 s when it joins, then every
+2 s). Each exchange gives a round trip `t2 − t0` and an offset estimate `t1 − (t0 + t2)/2`
+whose error is at most half the round trip. We keep the 30 most recent exchanges, take the 5
+with the fastest round trips, and use the median of their offsets. If three exchanges in a row
+disagree by more than 0.5 s, the phone's clock restarted (page reload) and we start afresh.
+Measured against the known truth with `npm run fake-phone`: **0.2 ms error on localhost and
+about 1 ms through a Cloudflare tunnel** with 40 to 80 ms round trips.
 
 ## Design
 

@@ -32,8 +32,9 @@ npm run demo         # builds the web app and serves it from the relay server on
 npm run tunnel       # tunnels :8787
 ```
 
-Open the printed `https://…trycloudflare.com` URL on the phone. The URL changes every time
-you restart the tunnel.
+Open the printed `https://…trycloudflare.com` URL on the phone, or simply scan the QR code on
+the Studio: the tunnel script tells the server its public address and the QR code updates by
+itself. The URL changes every time you restart the tunnel.
 
 ## Option B (backup): self-signed HTTPS on your local network
 

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { makeRoomCode } from '@footnotes/shared';
 import { LogoMark } from '../ui/Logo';
-import { useEnvironment } from '../shared/environment';
+import { JoinCard } from './JoinCard';
+import { LiveLane } from './LiveLane';
+import { useStudioLink, type StudioLinkSnapshot } from './link';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -22,12 +24,12 @@ function useRoomCode(): string {
 }
 
 /**
- * The laptop Studio (for judges). Stage 0 shell: header, room code, empty score area.
- * Later stages fill in: audio, calibration, visual score, HUD, modes, Under the hood.
+ * The laptop Studio (for judges). Stage 3: live link to the phone with clock sync.
+ * Later stages add audio, calibration, the visual score, modes and Under the hood.
  */
 export function StudioPage() {
   const room = useRoomCode();
-  const env = useEnvironment();
+  const { link, snap } = useStudioLink(room);
 
   useEffect(() => {
     document.documentElement.style.background = 'var(--d-bg-0)';
@@ -35,6 +37,8 @@ export function StudioPage() {
       document.documentElement.style.background = '';
     };
   }, []);
+
+  const phoneHere = snap.status === 'connected' && snap.peerConnected;
 
   return (
     <div className="theme-dark studio">
@@ -47,36 +51,122 @@ export function StudioPage() {
           <span className="pill studio__pill">Studio</span>
         </div>
         <div className="studio__right">
-          <span className="studio__status">
-            <span className="dot" style={{ color: 'var(--d-note-3)' }} aria-hidden="true" />
-            Waiting for phone
-          </span>
+          <ConnectionStatus snap={snap} />
           <span>
             Room <span className="studio__code">{room}</span>
           </span>
         </div>
       </header>
 
-      <main className="studio__main fade-in">
-        <div className="studio__empty">
-          <LogoMark size={72} color="var(--d-note-1)" />
-          <h2>The score will play here.</h2>
-          <p>
-            On the phone, open this site, choose "I'm the Sensor" and enter <strong>{room}</strong>.
+      <main className="studio__body">
+        <section className="studio__stage" aria-label="Live from the phone">
+          <h2 className="studio__h">Live from the phone</h2>
+          <LiveLane link={link} />
+          <p className="studio__legend">
+            <span className="legend-dot" aria-hidden="true" /> a step, placed where the foot landed
+            <span className="legend-ring" aria-hidden="true" /> inferred step (one leg felt)
+            <span className="legend-line" aria-hidden="true" /> movement felt by the phone
           </p>
-        </div>
-      </main>
+        </section>
 
-      <footer className="studio__footer">
-        Server:{' '}
-        {env.server === 'ok'
-          ? 'connected'
-          : env.server === 'checking'
-            ? 'checking...'
-            : 'not reachable'}
-        {' · '}
-        {env.secure ? 'secure connection' : 'not secure (fine on the laptop)'}
-      </footer>
+        <aside className="studio__side">
+          {!phoneHere && <JoinCard room={room} />}
+          <div className="tiles">
+            <Tile label="Steps" value={snap.stepCount || '-'} />
+            <Tile
+              label="Their pace"
+              value={snap.cadenceSpm && fresh(snap) ? Math.round(snap.cadenceSpm) : '-'}
+              unit="steps/min"
+            />
+            <Tile
+              label="Round trip"
+              value={snap.lastRtt !== null ? Math.round(snap.lastRtt) : '-'}
+              unit="ms"
+              hint={snap.clock ? `best ${Math.round(snap.clock.rtt)} ms` : undefined}
+            />
+            <Tile
+              label="Step arrives after"
+              value={snap.stepLatencyMs !== null ? Math.round(snap.stepLatencyMs) : '-'}
+              unit="ms"
+              hint="detection + network"
+            />
+            <Tile
+              label="Clock offset"
+              value={snap.clock ? (snap.clock.offset / 1000).toFixed(3) : '-'}
+              unit="s"
+              hint={snap.clock ? `± ${Math.round(snap.clock.uncertainty)} ms` : 'phone − laptop'}
+            />
+            <Tile
+              label="Phone sensor"
+              value={snap.phone?.rateHz ? Math.round(snap.phone.rateHz) : '-'}
+              unit="Hz"
+              hint={
+                snap.phone
+                  ? snap.phone.motion === 'granted'
+                    ? snap.phone.wakeLock
+                      ? 'on, screen kept awake'
+                      : 'on, screen may sleep'
+                    : 'sensor not started yet'
+                  : undefined
+              }
+            />
+          </div>
+          {phoneHere && <JoinCard room={room} compact />}
+        </aside>
+      </main>
+    </div>
+  );
+}
+
+const fresh = (s: StudioLinkSnapshot) =>
+  s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
+
+function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
+  let text: string;
+  let color: string;
+  if (snap.status === 'reconnecting' || snap.status === 'connecting') {
+    text =
+      snap.status === 'connecting'
+        ? 'Connecting...'
+        : 'We lost the server connection. Trying again...';
+    color = 'var(--d-slightly-off)';
+  } else if (snap.status === 'error') {
+    text = snap.error ?? 'Connection problem';
+    color = 'var(--d-slightly-off)';
+  } else if (!snap.peerConnected) {
+    text = 'Waiting for phone';
+    color = 'var(--d-note-3)';
+  } else {
+    text = `Phone connected${snap.lastRtt !== null ? ` · ${Math.round(snap.lastRtt)} ms` : ''}`;
+    color = 'var(--d-on-time)';
+  }
+  return (
+    <span className="studio__status" role="status">
+      <span className="dot" style={{ color }} aria-hidden="true" />
+      {text}
+    </span>
+  );
+}
+
+function Tile({
+  label,
+  value,
+  unit,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  unit?: string;
+  hint?: string;
+}) {
+  return (
+    <div className="tile">
+      <p className="tile__label">{label}</p>
+      <p className="tile__value">
+        {value}
+        {unit && value !== '-' && <span className="tile__unit"> {unit}</span>}
+      </p>
+      {hint && <p className="tile__hint">{hint}</p>}
     </div>
   );
 }

@@ -9,6 +9,9 @@ import { useWakeLock, wakeLock } from './wakeLock';
 import { RAW_SERIES, STEP_SERIES, SignalGraph, type GraphMode } from './SignalGraph';
 import { StepTest, TuningPanel } from './StepTools';
 import { useSteps } from './steps';
+import { useSensorLink } from './link';
+import type { LinkSnapshot } from '../shared/connection';
+import { Link } from 'react-router-dom';
 import './sensor.css';
 
 // iOS (Safari and every iPhone browser) is the platform that has requestPermission().
@@ -27,6 +30,7 @@ export function SensorPage() {
   const room = params.get('room');
   const m = useMotion();
   const wake = useWakeLock();
+  const link = useSensorLink(room);
   const [graph, setGraph] = useState<GraphMode>('steps');
 
   const active = m.state === 'running' || m.state === 'waiting' || m.state === 'requesting';
@@ -47,6 +51,8 @@ export function SensorPage() {
         <Wordmark size={36} />
         {room && <span className="pill sensor__room">Room {room}</span>}
       </div>
+
+      <LinkLine room={room} link={link} />
 
       {m.state === 'idle' && (
         <>
@@ -156,6 +162,45 @@ export function SensorPage() {
         </Button>
       )}
     </main>
+  );
+}
+
+/** One calm line about the laptop connection. Shape (dot) + words, never colour alone. */
+function LinkLine({ room, link }: { room: string | null; link: LinkSnapshot | null }) {
+  if (!room) {
+    return (
+      <p className="link-line link-line--off">
+        <span className="dot" aria-hidden="true" />
+        <span>
+          Not linked to a laptop. <Link to="/">Enter a room code</Link>
+        </span>
+      </p>
+    );
+  }
+  if (!link) return null;
+  let text: string;
+  let tone: 'on' | 'wait' | 'off';
+  if (link.status === 'error') {
+    text = link.error ?? 'Something went wrong with the room code.';
+    tone = 'off';
+  } else if (link.status === 'reconnecting') {
+    text = 'We lost the laptop connection. Trying again...';
+    tone = 'wait';
+  } else if (link.status === 'connecting') {
+    text = 'Connecting...';
+    tone = 'wait';
+  } else if (!link.peerConnected) {
+    text = 'Connected. Waiting for the laptop to open the Studio...';
+    tone = 'wait';
+  } else {
+    text = 'Linked to the laptop';
+    tone = 'on';
+  }
+  return (
+    <p className={`link-line link-line--${tone}`} role="status">
+      <span className="dot" aria-hidden="true" />
+      <span>{text}</span>
+    </p>
   );
 }
 

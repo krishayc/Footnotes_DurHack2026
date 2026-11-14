@@ -23,6 +23,7 @@ export default defineConfig({
     proxy: {
       '/ws': { target: 'ws://localhost:8787', ws: true },
       '/health': 'http://localhost:8787',
+      '/api': 'http://localhost:8787',
     },
   },
   build: { target: 'es2022', sourcemap: true },

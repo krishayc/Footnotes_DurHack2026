@@ -13,7 +13,7 @@ import {
   type StepDetectorSettings,
 } from '@footnotes/shared';
 import { motion } from './motion';
-import { FrameBuffer } from './SampleBuffer';
+import { FrameBuffer } from '../shared/SampleBuffer';
 
 const STORAGE_KEY = 'footnotes.stepSettings.v1';
 

@@ -13,13 +13,14 @@
     "build": "npm run build -w @footnotes/web",
     "start": "npm run start -w @footnotes/server",
     "demo": "npm run build && npm run start",
-    "tunnel": "bash scripts/tunnel.sh 8787",
-    "tunnel:dev": "bash scripts/tunnel.sh 5173",
+    "tunnel": "node scripts/tunnel.mjs 8787",
+    "tunnel:dev": "node scripts/tunnel.mjs 5173",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm test --workspaces --if-present"
+    "test": "npm test --workspaces --if-present",
+    "fake-phone": "tsx scripts/fake-phone.ts"
   },
   "engines": {
     "node": ">=20"

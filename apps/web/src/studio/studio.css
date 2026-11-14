@@ -1,6 +1,6 @@
 .studio {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   min-height: 100dvh;
   font-size: 18px;
 }
@@ -9,8 +9,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s-6);
-  padding: var(--s-5) var(--s-7);
+  gap: var(--s-4) var(--s-6);
+  padding: var(--s-4) var(--s-7);
   border-bottom: 2px solid var(--d-border);
   background: var(--d-bg-1);
 }
@@ -24,17 +24,19 @@
   border-color: var(--d-border-strong);
 }
 .studio__right {
-  flex-wrap: wrap;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--s-6);
   color: var(--d-muted);
 }
 .studio__status {
-  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  white-space: nowrap;
+  color: var(--d-text);
+  font-weight: 700;
 }
 .studio__code {
   font-family: var(--font-display);
@@ -43,24 +45,164 @@
   letter-spacing: 0.18em;
   color: var(--c-highlight);
 }
-.studio__main {
+
+.studio__body {
   display: grid;
-  place-items: center;
-  padding: var(--s-8);
-  text-align: center;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--s-6);
+  padding: var(--s-6) var(--s-7);
 }
-.studio__empty {
-  max-width: 46ch;
-  display: grid;
-  gap: var(--s-4);
-  justify-items: center;
+@media (max-width: 960px) {
+  .studio__body {
+    grid-template-columns: 1fr;
+    padding: var(--s-5);
+  }
 }
-.studio__empty p {
+.studio__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-height: 420px;
+}
+.studio__h {
+  font-size: 22px;
+  font-weight: 500;
   color: var(--d-muted);
 }
-.studio__footer {
-  padding: var(--s-4) var(--s-7);
-  border-top: 2px solid var(--d-border);
+.lane {
+  flex: 1;
+  width: 100%;
+  min-height: 360px;
+  border-radius: var(--r-card);
+  border: 2px solid var(--d-border);
+  display: block;
+}
+.studio__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
   color: var(--d-muted);
   font-size: 16px;
+}
+.legend-dot,
+.legend-ring {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-left: var(--s-3);
+}
+.legend-dot {
+  background: var(--c-highlight);
+  margin-left: 0;
+}
+.legend-ring {
+  border: 2.5px solid var(--c-highlight);
+}
+.legend-line {
+  width: 24px;
+  height: 3px;
+  background: var(--d-note-1);
+  display: inline-block;
+  margin-left: var(--s-3);
+}
+
+.studio__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+}
+.tile {
+  background: var(--d-bg-1);
+  border: 2px solid var(--d-border);
+  border-radius: 18px;
+  padding: var(--s-3) var(--s-4);
+}
+.tile__label {
+  color: var(--d-muted);
+  font-size: 15px;
+}
+.tile__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.tile__unit {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--d-muted);
+}
+.tile__hint {
+  color: var(--d-muted);
+  font-size: 14px;
+}
+
+.join {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+  background: var(--d-bg-1);
+  border: 2px solid var(--d-border-strong);
+  border-radius: var(--r-card);
+  padding: var(--s-5);
+  text-align: center;
+}
+.join__qr {
+  width: 220px;
+  height: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--c-bg);
+}
+.join__qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.join__label {
+  color: var(--d-muted);
+  font-size: 16px;
+}
+.join__code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  letter-spacing: 0.2em;
+  color: var(--c-highlight);
+  line-height: 1.1;
+}
+.join__url {
+  color: var(--d-muted);
+  font-size: 14px;
+  word-break: break-all;
+}
+.join__warn {
+  margin-top: var(--s-2);
+  color: var(--d-slightly-off);
+  font-size: 15px;
+}
+.join__warn code {
+  font-size: 14px;
+}
+.join--compact {
+  flex-direction: row;
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+}
+.join--compact .join__qr {
+  width: 96px;
+  height: 96px;
+  flex: none;
+}
+.join--compact .join__code {
+  font-size: 28px;
 }

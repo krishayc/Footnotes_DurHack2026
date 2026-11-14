@@ -7,8 +7,12 @@
  *     Each room holds at most one Sensor (phone) and one Studio (laptop).
  *  3. GET /health for a quick "is the server alive?" check.
  *
- * Stage 0 handles joining rooms and telling each side whether the other is there.
- * Forwarding step / accel / clock-sync messages between the two sides is added in Stage 3.
+ * After joining, every other message is forwarded untouched to the other side of the room
+ * (steps, sensor batches, clock-sync pings/pongs, status, calibration). The server never
+ * interprets timing data: clock sync happens end to end between phone and laptop.
+ *
+ * A heartbeat (WebSocket ping every 10 s) finds connections that died silently (phone
+ * locked, WiFi dropped) so the other side is told promptly that its peer has gone.
  *
  * Why tsx (not compiled JS) in production? It removes a build step at 3am. tsx runs the
  * TypeScript directly; the server is small, so the startup cost is negligible.
@@ -50,6 +54,24 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, name: 'footnotes', protocol: PROTOCOL_VERSION, rooms: rooms.size });
 });
 
+/**
+ * The public https URL (from the Cloudflare tunnel) so the Studio's QR code points somewhere
+ * a phone can reach. scripts/tunnel.mjs posts it here; only accepted from this machine.
+ */
+let publicUrl: string | null = null;
+app.get('/api/public-url', (_req, res) => res.json({ url: publicUrl }));
+app.post('/api/public-url', express.json(), (req, res) => {
+  const ip = req.socket.remoteAddress ?? '';
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip) || req.headers['cf-connecting-ip']) {
+    res.status(403).end();
+    return;
+  }
+  const url = typeof req.body?.url === 'string' ? req.body.url : null;
+  publicUrl = url && /^https:\/\/[a-z0-9.-]+$/i.test(url) ? url : null;
+  console.log(publicUrl ? `Public URL: ${publicUrl}` : 'Public URL cleared');
+  res.json({ url: publicUrl });
+});
+
 if (existsSync(webDist)) {
   app.use(express.static(webDist));
   // Single-page app: any unknown route (/, /sensor, /studio) gets index.html.
@@ -68,6 +90,19 @@ const server = createServer(app);
 
 // ---------- websocket ----------
 const wss = new WebSocketServer({ server, path: WS_PATH });
+
+const alive = new WeakMap<WebSocket, boolean>();
+const HEARTBEAT_MS = 10_000;
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (alive.get(ws) === false) {
+      ws.terminate(); // triggers 'close', which tells the peer
+      continue;
+    }
+    alive.set(ws, false);
+    ws.ping();
+  }
+}, HEARTBEAT_MS).unref();
 
 wss.on('connection', (ws) => {
   let roomCode: string | null = null;
@@ -109,8 +144,15 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // Stage 3: forward everything else to the other side of the room.
+    // Everything else: forward to the other side of the room.
+    if (!roomCode || !role) return;
+    const peer = rooms.get(roomCode)?.[other(role)];
+    if (peer && peer.readyState === peer.OPEN) peer.send(data.toString());
   });
+
+  // Heartbeat bookkeeping: the browser answers our pings automatically.
+  alive.set(ws, true);
+  ws.on('pong', () => alive.set(ws, true));
 
   ws.on('close', () => {
     if (!roomCode || !role) return;

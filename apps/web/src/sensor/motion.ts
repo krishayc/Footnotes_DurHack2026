@@ -15,7 +15,7 @@
  * This lives outside React as a single shared object, so the graph, the step detector and the
  * network sender can all read the same samples without re-rendering on every event.
  */
-import { SampleBuffer } from './SampleBuffer';
+import { SampleBuffer } from '../shared/SampleBuffer';
 
 export type MotionState =
   | 'idle' // not started yet
