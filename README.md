@@ -58,6 +58,10 @@ simulated jittery network).
 No phone handy? `npm run fake-phone -- ABCD` joins room ABCD as a pretend phone that walks at
 105 steps/min (add a tunnel URL as the second argument to go through Cloudflare).
 
+Tuning on real walks: on the phone's pocket screen tap **Record 30 seconds for tuning**; the
+laptop saves `recordings/walk-<time>.json`. Then `npm run analyze -- recordings/<file> --steps 40`
+replays it through the detector, compares settings and draws the walk as `<file>.html`.
+
 Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
 
 ## Architecture

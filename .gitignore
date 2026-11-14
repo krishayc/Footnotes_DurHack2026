@@ -7,3 +7,6 @@ dist/
 !.env.example
 # Raw Daphnet download (large); preprocessed replays live in apps/web/public/replays
 scripts/daphnet/raw/
+
+# Phone walk recordings (npm run analyze). Local only: they are raw sensor data.
+recordings/

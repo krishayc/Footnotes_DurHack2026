@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm test --workspaces --if-present",
-    "fake-phone": "tsx scripts/fake-phone.ts"
+    "fake-phone": "tsx scripts/fake-phone.ts",
+    "analyze": "tsx scripts/analyze.ts"
   },
   "engines": {
     "node": ">=20"

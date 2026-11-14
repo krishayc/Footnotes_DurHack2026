@@ -20,9 +20,10 @@
  *                 the step time is as close as possible to the real foot strike. This matters
  *                 because Stage 5 compares step times with the beat to the millisecond.
  *  7. Legs        With one phone in one pocket you may feel every step, or mostly the steps
- *                 of the leg the phone is on. If the gap between detected peaks looks like a
- *                 full stride (> ~0.9 s) rather than a step, we treat each peak as a stride:
- *                 we count it as two steps and add an "inferred" step halfway between strides.
+ *                 of the leg the phone is on. Default: every bump is one step. In 'one' mode
+ *                 each bump is a stride: we count two steps and add an "inferred" step halfway
+ *                 between strides. ('auto' guesses from the gap size; it can't tell a slow
+ *                 two-leg walk from a fast one-leg walk, so it is not the default.)
  *  8. Cadence     Steps per minute = 60000 / median gap between recent steps. The median
  *                 ignores the odd missed or extra step, unlike an average.
  */
@@ -51,7 +52,11 @@ export const DEFAULT_STEP_SETTINGS: StepDetectorSettings = {
   minAmplitude: 0.5,
   minProminence: 0.8,
   refractoryMs: 300,
-  legMode: 'auto',
+  // 'both' by default: tested on a real walk, 'auto' mistook slow walking (about 1 s per
+  // step, common with Parkinson's) for one-leg strides and doubled the pace. A slow walk with
+  // both legs felt and a faster walk with one leg felt look the same, so we don't guess:
+  // the Studio has a switch if a pocket only picks up one leg.
+  legMode: 'both',
 };
 
 /** Allowed ranges for the tuning panel. */
@@ -122,6 +127,7 @@ export class StepDetector {
     this.s = { ...DEFAULT_STEP_SETTINGS, ...settings };
     this.onStep = onStep;
     this.delayMs = measurePeakDelayMs(this.s.lowpassHz);
+    this._oneLeg = this.s.legMode === 'one';
   }
 
   get settings(): Readonly<StepDetectorSettings> {

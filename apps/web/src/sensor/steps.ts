@@ -15,7 +15,8 @@ import {
 import { motion } from './motion';
 import { FrameBuffer } from '../shared/SampleBuffer';
 
-const STORAGE_KEY = 'footnotes.stepSettings.v1';
+// v2: default leg mode changed from 'auto' to 'both' (old saved settings would keep 'auto').
+const STORAGE_KEY = 'footnotes.stepSettings.v2';
 
 function loadSettings(): StepDetectorSettings {
   try {

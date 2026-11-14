@@ -93,6 +93,12 @@ export interface StatusMsg {
   motion: 'unknown' | 'granted' | 'denied' | 'unsupported';
   wakeLock: boolean;
   rateHz?: number;
+  /** The phone is treating each bump as a stride (one leg felt) and counting it as 2 steps. */
+  oneLeg?: boolean;
+  /** The phone's leg setting. */
+  legMode?: 'both' | 'one' | 'auto';
+  /** The phone's own pace estimate, steps per minute. */
+  cadenceSpm?: number | null;
 }
 
 /** Studio <-> phone: calibration flow. */
@@ -120,9 +126,16 @@ export interface KeepaliveMsg {
   type: 'keepalive';
 }
 
+/** Studio -> phone: how to count bumps (set from the Studio when a pocket feels one leg). */
+export interface SetLegModeMsg {
+  type: 'setLegMode';
+  legMode: 'both' | 'one' | 'auto';
+}
+
 export type ClientMsg =
   | JoinMsg
   | KeepaliveMsg
+  | SetLegModeMsg
   | PingMsg
   | PongMsg
   | StepMsg
@@ -151,6 +164,7 @@ const KNOWN_TYPES = new Set<AnyMsg['type']>([
   'status',
   'calibrationStart',
   'calibrationResult',
+  'setLegMode',
 ]);
 
 /** Parse a raw WebSocket frame. Returns null for anything that is not a known message. */

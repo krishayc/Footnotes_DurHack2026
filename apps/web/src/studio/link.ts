@@ -73,6 +73,11 @@ export class StudioLink {
     return () => this.stepListeners.delete(fn);
   }
 
+  /** Tell the phone how to count bumps: one step each, or two (only one leg felt). */
+  setPhoneLegMode(legMode: 'both' | 'one') {
+    this.conn.send({ type: 'setLegMode', legMode });
+  }
+
   /** Phone time -> laptop time, or null before the first clock estimate. */
   toLocal(phoneT: number): number | null {
     return this.clock.toLocal(phoneT);
@@ -115,7 +120,14 @@ export class StudioLink {
             for (const [t, x, y, z] of msg.samples) this.accel.push(t, x, y, z);
             break;
           case 'status':
-            this.phone = { motion: msg.motion, wakeLock: msg.wakeLock, rateHz: msg.rateHz };
+            this.phone = {
+              motion: msg.motion,
+              wakeLock: msg.wakeLock,
+              rateHz: msg.rateHz,
+              oneLeg: msg.oneLeg,
+              legMode: msg.legMode,
+              cadenceSpm: msg.cadenceSpm,
+            };
             break;
         }
       }),

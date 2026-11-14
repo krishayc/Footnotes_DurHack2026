@@ -32,7 +32,10 @@ test('slow, irregular walking (80 spm, 8% jitter): count within 5%', () => {
 });
 
 test('only the pocket leg felt: auto mode switches to strides and still counts every step', () => {
-  const { walk, steps, det } = run({ cadenceSpm: 100, seconds: 60, farLeg: 0.05, seed: 4 });
+  const { walk, steps, det } = run(
+    { cadenceSpm: 100, seconds: 60, farLeg: 0.05, seed: 4 },
+    { legMode: 'auto' },
+  );
   assert.equal(det.oneLeg, true);
   assert.ok(
     pct(steps.length, walk.stepTimes.length) <= 0.08,
@@ -56,4 +59,25 @@ test('step times land close to the true foot strikes (filter delay removed)', ()
   }
   const meanErr = errors.reduce((a, b) => a + b, 0) / errors.length;
   assert.ok(Math.abs(meanErr) < 40, `mean timing error ${meanErr.toFixed(1)} ms`);
+});
+
+test('slow walking (60 spm, both legs felt) is NOT doubled by default', () => {
+  const { walk, steps, det } = run({ cadenceSpm: 60, seconds: 60, farLeg: 0.6, seed: 8 });
+  assert.ok(
+    pct(steps.length, walk.stepTimes.length) <= 0.05,
+    `${steps.length} vs ${walk.stepTimes.length}`,
+  );
+  assert.ok(pct(det.cadenceSpm!, 60) <= 0.05, `cadence ${det.cadenceSpm}`);
+});
+
+test('one-leg mode set from the start counts each bump as two steps', () => {
+  const { walk, steps, det } = run(
+    { cadenceSpm: 100, seconds: 60, farLeg: 0.05, seed: 9 },
+    { legMode: 'one' },
+  );
+  assert.equal(det.oneLeg, true);
+  assert.ok(
+    pct(steps.length, walk.stepTimes.length) <= 0.08,
+    `${steps.length} vs ${walk.stepTimes.length}`,
+  );
 });

@@ -438,3 +438,25 @@
     animation: none;
   }
 }
+.pocket__rec {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: center;
+  text-align: center;
+}
+.pocket__rectext {
+  color: var(--c-highlight);
+  font-weight: 700;
+  font-size: var(--fs-min);
+}
+.pocket__recbtn {
+  min-height: 56px;
+  padding: 0 var(--s-5);
+  border-radius: 999px;
+  border: 2px solid var(--d-border-strong);
+  background: var(--d-bg-2);
+  color: var(--d-text);
+  font-weight: 700;
+  font-size: var(--fs-min);
+  cursor: pointer;
+}

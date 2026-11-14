@@ -37,6 +37,10 @@ class SensorLink {
           this.conn.send({ type: 'pong', id: msg.id, t0: msg.t0, t1: performance.now() });
         } else if (msg.type === 'peer' && msg.connected) {
           this.sendStatus();
+        } else if (msg.type === 'setLegMode') {
+          steps.updateSettings({ legMode: msg.legMode });
+          steps.resetCount();
+          this.sendStatus();
         }
       }),
       steps.onStep((s) => {
@@ -91,6 +95,9 @@ class SensorLink {
       motion: motionState,
       wakeLock: wakeLock.getSnapshot() === 'on',
       rateHz: round(m.rateHz, 1),
+      oneLeg: steps.getSnapshot().oneLeg,
+      legMode: steps.getSnapshot().settings.legMode,
+      cadenceSpm: steps.getSnapshot().cadenceSpm,
     });
   }
 }

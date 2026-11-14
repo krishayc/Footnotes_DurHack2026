@@ -8,6 +8,7 @@ import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { ControlPanel } from './ControlPanel';
 import { SyncPanel } from './SyncPanel';
+import { PhoneCounting } from './PhoneCounting';
 import { LayersPanel, MusicDebug } from './LayersPanel';
 import { arranger } from './music/arranger';
 import { ModeBar, SimControls, TapPad } from './ModeBar';
@@ -136,6 +137,7 @@ export function StudioPage() {
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}
           {live && !phoneHere && <JoinCard room={room} />}
+          {live && phoneHere && <PhoneCounting link={link} snap={snap} />}
 
           <div className="tiles">
             <Tile
@@ -184,11 +186,13 @@ export function StudioPage() {
                   unit="Hz"
                   hint={
                     snap.phone
-                      ? snap.phone.motion === 'granted'
-                        ? snap.phone.wakeLock
-                          ? 'on, screen kept awake'
-                          : 'on, screen may sleep'
-                        : 'sensor not started yet'
+                      ? snap.phone.motion !== 'granted'
+                        ? 'sensor not started yet'
+                        : snap.phone.oneLeg
+                          ? 'counting each bump as 2 steps (one leg)'
+                          : snap.phone.wakeLock
+                            ? 'on, screen kept awake'
+                            : 'on, screen may sleep'
                       : undefined
                   }
                 />

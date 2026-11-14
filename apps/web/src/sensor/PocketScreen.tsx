@@ -12,6 +12,8 @@ import type { LinkSnapshot } from '../shared/connection';
 import { useMotion } from './useMotion';
 import { useSteps } from './steps';
 import { useWakeLock } from './wakeLock';
+import { useStore } from '../shared/store';
+import { RECORD_MS, recorder } from './recorder';
 
 const HOLD_MS = 2000;
 
@@ -27,7 +29,15 @@ export function PocketScreen({
   const m = useMotion();
   const s = useSteps();
   const wake = useWakeLock();
+  const rec = useStore(recorder.state);
   const [hold, setHold] = useState(0); // 0..1
+  const [, force] = useState(0);
+  // Re-render each second while recording so the countdown moves.
+  useEffect(() => {
+    if (rec.status !== 'recording') return;
+    const id = window.setInterval(() => force((n) => n + 1), 500);
+    return () => window.clearInterval(id);
+  }, [rec.status]);
   const holdStart = useRef<number | null>(null);
   const raf = useRef(0);
 
@@ -87,6 +97,8 @@ export function PocketScreen({
         {wake !== 'on' && <Row ok={false} text="Keep the screen on" />}
       </div>
 
+      <RecordBanner />
+
       <div className="pocket__count">
         <p className="pocket__num">{s.count}</p>
         <p className="pocket__label">steps</p>
@@ -116,6 +128,40 @@ export function PocketScreen({
         </p>
         <p className="pocket__hint">Quick taps and pocket bumps are ignored</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Record button. This is the one thing on the pocket screen you can tap, and only BEFORE the
+ * phone goes in the pocket: it sits in its own box and stops the tap reaching the hold area.
+ */
+function RecordBanner() {
+  const rec = useStore(recorder.state);
+  const left =
+    rec.status === 'recording' && rec.startedAt !== null
+      ? Math.max(0, Math.ceil((RECORD_MS - (performance.now() - rec.startedAt)) / 1000))
+      : 0;
+  const stop = (e: PointerEvent | React.MouseEvent) => e.stopPropagation();
+  return (
+    <div className="pocket__rec" onPointerDown={stop}>
+      {rec.status === 'recording' ? (
+        <p className="pocket__rectext" aria-live="polite">
+          Recording: {left} s left. Walk naturally and count your steps out loud.
+        </p>
+      ) : rec.status === 'sending' ? (
+        <p className="pocket__rectext">Sending the recording to the laptop...</p>
+      ) : (
+        <>
+          {rec.status === 'sent' && <p className="pocket__rectext">Sent: {rec.file}</p>}
+          {rec.status === 'error' && (
+            <p className="pocket__rectext">Could not send: {rec.message}</p>
+          )}
+          <button type="button" className="pocket__recbtn" onClick={() => recorder.start()}>
+            {rec.status === 'sent' ? 'Record another 30 seconds' : 'Record 30 seconds for tuning'}
+          </button>
+        </>
+      )}
     </div>
   );
 }

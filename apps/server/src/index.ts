@@ -19,7 +19,7 @@
  */
 import express from 'express';
 import { createServer } from 'node:http';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
@@ -35,6 +35,7 @@ import {
 const PORT = Number(process.env.PORT ?? 8787);
 const here = dirname(fileURLToPath(import.meta.url));
 const webDist = resolve(here, '../../web/dist');
+const recordingsDir = resolve(here, '../../../recordings');
 
 // ---------- rooms ----------
 interface Room {
@@ -62,6 +63,30 @@ app.get('/health', (_req, res) => {
  */
 let publicUrl: string | null = null;
 app.get('/api/public-url', (_req, res) => res.json({ url: publicUrl }));
+
+/**
+ * Phone sensor recordings (for tuning step detection on real walking). The phone posts ~30 s
+ * of raw accelerometer data plus the steps it detected; we save it as recordings/<name>.json,
+ * where `npm run analyze -- <file>` can replay it. The file name is chosen here, never by the
+ * sender, and there is a size and count limit.
+ */
+app.post('/api/recordings', express.json({ limit: '4mb' }), (req, res) => {
+  const body = req.body as { samples?: unknown };
+  if (!body || !Array.isArray(body.samples)) {
+    res.status(400).json({ error: 'No samples' });
+    return;
+  }
+  mkdirSync(recordingsDir, { recursive: true });
+  if (readdirSync(recordingsDir).length > 300) {
+    res.status(507).json({ error: 'Too many recordings saved already' });
+    return;
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const name = `walk-${stamp}.json`;
+  writeFileSync(resolve(recordingsDir, name), JSON.stringify(body));
+  console.log(`Saved recording recordings/${name} (${body.samples.length} samples)`);
+  res.json({ name });
+});
 app.post('/api/public-url', express.json(), (req, res) => {
   const ip = req.socket.remoteAddress ?? '';
   if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip) || req.headers['cf-connecting-ip']) {
