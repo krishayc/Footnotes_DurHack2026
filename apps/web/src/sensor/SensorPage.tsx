@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Wordmark } from '../ui/Logo';
@@ -5,7 +6,9 @@ import { IconPlay } from '../ui/icons';
 import { motion, type MotionState } from './motion';
 import { useMotion } from './useMotion';
 import { useWakeLock, wakeLock } from './wakeLock';
-import { SERIES, SignalGraph } from './SignalGraph';
+import { RAW_SERIES, STEP_SERIES, SignalGraph, type GraphMode } from './SignalGraph';
+import { StepTest, TuningPanel } from './StepTools';
+import { useSteps } from './steps';
 import './sensor.css';
 
 // iOS (Safari and every iPhone browser) is the platform that has requestPermission().
@@ -24,6 +27,7 @@ export function SensorPage() {
   const room = params.get('room');
   const m = useMotion();
   const wake = useWakeLock();
+  const [graph, setGraph] = useState<GraphMode>('steps');
 
   const active = m.state === 'running' || m.state === 'waiting' || m.state === 'requesting';
 
@@ -82,25 +86,48 @@ export function SensorPage() {
             <span className="dot" aria-hidden="true" />
             Sensor is on
           </p>
-          <p className="sensor__lead">
-            Shake the phone, or walk with it in your pocket, and watch the lines move.
-          </p>
+
+          <StepCounter />
 
           <section className="graph-card" aria-label="Live motion signal">
-            <SignalGraph />
+            <div className="seg seg--dark" role="group" aria-label="Graph view">
+              {(['steps', 'raw'] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  className="seg__btn"
+                  aria-pressed={graph === g}
+                  onClick={() => setGraph(g)}
+                >
+                  {g === 'steps' ? 'Steps' : 'Raw sensor'}
+                </button>
+              ))}
+            </div>
+            <SignalGraph mode={graph} />
             <ul className="legend">
-              {SERIES.map((s) => (
+              {(graph === 'steps' ? STEP_SERIES : RAW_SERIES).map((s) => (
                 <li key={s.key}>
-                  <span
-                    className="legend__swatch"
-                    style={{ background: s.color, height: s.width + 1 }}
-                    aria-hidden="true"
-                  />
+                  {s.key === 'step' ? (
+                    <span className="legend__dot" aria-hidden="true" />
+                  ) : (
+                    <span
+                      className={`legend__swatch${s.dash ? ' legend__swatch--dash' : ''}`}
+                      style={{
+                        background: s.dash ? undefined : s.color,
+                        color: s.color,
+                        height: s.width + 1,
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
                   {s.label}
                 </li>
               ))}
             </ul>
           </section>
+
+          <StepTest />
+          <TuningPanel />
 
           <dl className="stats">
             <div>
@@ -108,26 +135,17 @@ export function SensorPage() {
               <dd>{m.rateHz ? Math.round(m.rateHz) : '...'} Hz</dd>
             </div>
             <div>
-              <dt>Overall movement</dt>
-              <dd>{m.latest ? m.latest.mag.toFixed(1) : '...'}</dd>
-            </div>
-            <div>
               <dt>Screen</dt>
               <dd style={{ fontSize: 'var(--fs-body-lg)' }}>
                 {wake === 'on' ? 'Kept awake' : 'Keep it on'}
               </dd>
             </div>
-            <div>
-              <dt>Readings so far</dt>
-              <dd>{m.total.toLocaleString()}</dd>
-            </div>
           </dl>
           <p className="sensor__note">
-            Units are m/s² including gravity, so a phone lying still reads about 9.8 overall.
             {m.reportedIntervalMs != null &&
-              ` The browser reports one reading every ${formatInterval(m.reportedIntervalMs)}.`}
+              `The browser reports one reading every ${formatInterval(m.reportedIntervalMs)}. `}
             {wake !== 'on' &&
-              ' This phone did not let us keep the screen on, so please stop it from locking.'}
+              'This phone did not let us keep the screen on, so please stop it from locking.'}
           </p>
         </>
       )}
@@ -138,6 +156,31 @@ export function SensorPage() {
         </Button>
       )}
     </main>
+  );
+}
+
+/** Big live step count and pace. Pace hides itself if no step for 3 s (they stopped). */
+function StepCounter() {
+  const s = useSteps();
+  useMotion(); // re-render a few times a second so "stopped" shows promptly
+  const fresh = s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
+  return (
+    <section className="counter" aria-live="polite" aria-label="Step count">
+      <div>
+        <p className="counter__label">Steps</p>
+        <p className="counter__value">{s.count}</p>
+      </div>
+      <div>
+        <p className="counter__label">Pace</p>
+        <p className="counter__value counter__value--sm">
+          {fresh && s.cadenceSpm ? Math.round(s.cadenceSpm) : '-'}
+        </p>
+        <p className="counter__unit">steps a minute</p>
+      </div>
+      {s.oneLeg && (
+        <p className="counter__note">Feeling one leg, so each bump counts as two steps.</p>
+      )}
+    </section>
   );
 }
 

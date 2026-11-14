@@ -18,7 +18,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "npm test --workspaces --if-present"
   },
   "engines": {
     "node": ">=20"
@@ -31,7 +32,8 @@
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
     "typescript": "~5.9",
-    "typescript-eslint": "^8.72.2"
+    "typescript-eslint": "^8.72.2",
+    "tsx": "^4.20.0"
   },
   "type": "module"
 }

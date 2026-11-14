@@ -72,6 +72,8 @@ export interface StepMsg {
   n: number;
   /** 0..1, how clear the peak was (optional). */
   confidence?: number;
+  /** True when the step was inferred (only one leg is being felt; see stepDetector.ts). */
+  inferred?: boolean;
 }
 
 /** A single accelerometer sample: phone-clock time and x/y/z in m/s^2 (incl. gravity). */

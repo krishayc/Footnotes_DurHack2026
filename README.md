@@ -23,7 +23,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | ----- | ------------------------------------ | ------ |
 | 0     | Plan, scaffold, design tokens, HTTPS | Done   |
 | 1     | Phone sensor page                    | Done   |
-| 2     | Step detection                       |        |
+| 2     | Step detection                       | Done   |
 | 3     | Phone to laptop link + clock sync    |        |
 | 4     | Calibration + steady beat            |        |
 | 5     | Sync scoring                         |        |
@@ -52,6 +52,8 @@ npm run demo           # http://localhost:8787
 npm run tunnel         # public https URL for the phone
 ```
 
+Tests: `npm test` (step detector on synthetic walks with known step times).
+
 Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
 
 ## Architecture
@@ -73,7 +75,7 @@ apps/web/            Vite + React + TypeScript (routes: / , /sensor , /studio)
   public/samples/    bundled audio samples (offline)
   public/replays/    preprocessed Daphnet clips
 apps/server/         Node + ws relay, static hosting
-packages/shared/     message protocol types + room codes (used by web AND server)
+packages/shared/     message protocol, room codes, and DSP (step detector + tests) used by web, server and scripts
 scripts/daphnet/     dataset preprocessing + freeze-index evaluation
 docs/                research notes, HTTPS setup, demo script, pitch
 ```

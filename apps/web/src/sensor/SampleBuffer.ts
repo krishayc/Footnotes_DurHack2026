@@ -73,3 +73,39 @@ export class SampleBuffer {
     this._count = 0;
   }
 }
+
+/**
+ * Ring buffer for what the step detector computed per sample: the smoothed signal and the
+ * threshold it was compared against. Drawn on the "Steps" graph.
+ */
+export class FrameBuffer {
+  readonly capacity: number;
+  readonly t: Float64Array;
+  readonly filtered: Float32Array;
+  readonly threshold: Float32Array;
+  private head = 0;
+  private count = 0;
+
+  constructor(capacity = 4096) {
+    this.capacity = capacity;
+    this.t = new Float64Array(capacity);
+    this.filtered = new Float32Array(capacity);
+    this.threshold = new Float32Array(capacity);
+  }
+
+  push(t: number, filtered: number, threshold: number) {
+    const i = this.head;
+    this.t[i] = t;
+    this.filtered[i] = filtered;
+    this.threshold[i] = threshold;
+    this.head = (i + 1) % this.capacity;
+    if (this.count < this.capacity) this.count++;
+  }
+
+  forEachSince(since: number, fn: (i: number) => void) {
+    const idx = (k: number) => (this.head - 1 - k + this.capacity * 2) % this.capacity;
+    let k = 0;
+    while (k < this.count && this.t[idx(k)] >= since) k++;
+    for (let j = k - 1; j >= 0; j--) fn(idx(j));
+  }
+}
