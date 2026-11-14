@@ -110,8 +110,19 @@ export interface CalibrationResultMsg {
   reliable: boolean;
 }
 
+/**
+ * Either way, client <-> server: "are you still there?". Each client sends one every 3 s and the
+ * server answers straight away. A client that hears nothing at all for 8 s assumes its
+ * connection died silently (common when a phone locks or Safari pauses the page: the socket
+ * still looks open but nothing gets through) and reconnects. Never forwarded to the peer.
+ */
+export interface KeepaliveMsg {
+  type: 'keepalive';
+}
+
 export type ClientMsg =
   | JoinMsg
+  | KeepaliveMsg
   | PingMsg
   | PongMsg
   | StepMsg
@@ -120,15 +131,16 @@ export type ClientMsg =
   | CalibrationStartMsg
   | CalibrationResultMsg;
 
-export type ServerMsg = HelloMsg | PeerMsg | ErrorMsg;
+export type ServerMsg = HelloMsg | PeerMsg | ErrorMsg | KeepaliveMsg;
 
 /** Messages the relay forwards untouched from one side of a room to the other. */
-export type RelayedMsg = Exclude<ClientMsg, JoinMsg>;
+export type RelayedMsg = Exclude<ClientMsg, JoinMsg | KeepaliveMsg>;
 
 export type AnyMsg = ClientMsg | ServerMsg;
 
 const KNOWN_TYPES = new Set<AnyMsg['type']>([
   'join',
+  'keepalive',
   'hello',
   'peer',
   'error',

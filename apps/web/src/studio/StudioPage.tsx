@@ -222,6 +222,12 @@ function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
   } else if (!snap.peerConnected) {
     text = 'Waiting for phone';
     color = 'var(--d-note-3)';
+  } else if (snap.phoneSilentMs !== null && snap.phoneSilentMs > 4000) {
+    text = `Phone quiet for ${Math.round(snap.phoneSilentMs / 1000)} s. Is its screen on?`;
+    color = 'var(--d-slightly-off)';
+  } else if (snap.phone && snap.phone.motion !== 'granted') {
+    text = 'Phone connected. Tap Start sensor on the phone';
+    color = 'var(--d-slightly-off)';
   } else {
     text = `Phone connected${snap.lastRtt !== null ? ` · ${Math.round(snap.lastRtt)} ms` : ''}`;
     color = 'var(--d-on-time)';

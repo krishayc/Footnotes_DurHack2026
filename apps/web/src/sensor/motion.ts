@@ -35,12 +35,16 @@ export interface MotionSnapshot {
   reportedIntervalMs: number | null;
   total: number;
   latest: { x: number; y: number; z: number; mag: number } | null;
+  /** Milliseconds since the last reading (Infinity if none). */
+  quietMs: number;
 }
 
 type Listener = () => void;
 type SampleListener = (t: number, x: number, y: number, z: number) => void;
 
 const NO_DATA_TIMEOUT_MS = 3000;
+/** Running, page on screen, but no reading for this long: the sensor stalled. Restart it. */
+const STALL_MS = 1500;
 
 interface IOSMotionEvent {
   requestPermission?: () => Promise<'granted' | 'denied'>;
@@ -54,6 +58,11 @@ class MotionSensor {
   private sampleListeners = new Set<SampleListener>();
   private noDataTimer: number | undefined;
   private snapshotTimer: number | undefined;
+  private stallTimer: number | undefined;
+  private lastSampleAt = 0;
+  private lastRestartAt = 0;
+  /** How many times we had to restart a stalled sensor (shown on the developer screen). */
+  restarts = 0;
   private snapshot: MotionSnapshot = this.makeSnapshot();
 
   /** Subscribe to (throttled) state / stats changes. Used by React via useSyncExternalStore. */
@@ -92,10 +101,29 @@ class MotionSensor {
 
   stop(): void {
     window.removeEventListener('devicemotion', this.handleMotion);
+    document.removeEventListener('visibilitychange', this.onVisible);
     window.clearTimeout(this.noDataTimer);
     window.clearInterval(this.snapshotTimer);
+    window.clearInterval(this.stallTimer);
     this.setState('idle');
   }
+
+  /**
+   * Phones sometimes stop sending motion events (after the screen was locked, Safari
+   * pausing the page, switching apps) without telling us. A phone is never perfectly still,
+   * so silence means the sensor stalled: re-attach the listener. Permission, once granted,
+   * lasts for the page, so no new prompt is needed.
+   */
+  private restartListening() {
+    window.removeEventListener('devicemotion', this.handleMotion);
+    window.addEventListener('devicemotion', this.handleMotion);
+    this.restarts++;
+    this.lastRestartAt = performance.now(); // give it a moment before trying again
+  }
+
+  private onVisible = () => {
+    if (document.visibilityState === 'visible' && this.state === 'running') this.restartListening();
+  };
 
   private listen() {
     window.addEventListener('devicemotion', this.handleMotion);
@@ -107,6 +135,19 @@ class MotionSensor {
     // Refresh the stats a few times a second (not per sample: that would re-render 100x/s).
     window.clearInterval(this.snapshotTimer);
     this.snapshotTimer = window.setInterval(() => this.publish(), 250);
+    // Watch for a stalled sensor.
+    document.addEventListener('visibilitychange', this.onVisible);
+    window.clearInterval(this.stallTimer);
+    this.stallTimer = window.setInterval(() => {
+      if (
+        this.state === 'running' &&
+        document.visibilityState === 'visible' &&
+        performance.now() - this.lastSampleAt > STALL_MS &&
+        performance.now() - this.lastRestartAt > STALL_MS
+      ) {
+        this.restartListening();
+      }
+    }, 1000);
   }
 
   private handleMotion = (e: DeviceMotionEvent) => {
@@ -119,6 +160,7 @@ class MotionSensor {
     const now = performance.now();
     const t = Math.abs(e.timeStamp - now) < 1000 ? e.timeStamp : now;
 
+    this.lastSampleAt = now;
     this.buffer.push(t, a.x, a.y, a.z);
     if (e.interval) this.reportedIntervalMs = e.interval;
     for (const fn of this.sampleListeners) fn(t, a.x, a.y, a.z);
@@ -150,6 +192,7 @@ class MotionSensor {
       reportedIntervalMs: this.reportedIntervalMs,
       total: b.total,
       latest,
+      quietMs: this.lastSampleAt ? performance.now() - this.lastSampleAt : Infinity,
     };
   }
 

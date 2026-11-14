@@ -32,6 +32,8 @@ export interface StudioLinkSnapshot extends LinkSnapshot {
   stepLatencyMs: number | null;
   phone: Omit<StatusMsg, 'type'> | null;
   lastStepAt: number | null;
+  /** How long since ANY message from the phone (ms), null if none yet. */
+  phoneSilentMs: number | null;
 }
 
 const PING_BURST_MS = 3000;
@@ -45,6 +47,7 @@ export class StudioLink {
   readonly accel = new SampleBuffer(4096);
   readonly steps: RemoteStep[] = [];
   private phone: StudioLinkSnapshot['phone'] = null;
+  private lastPhoneMsgAt: number | null = null;
   private pingId = 0;
   private lastPingAt = 0;
   private burstUntil = 0;
@@ -79,6 +82,9 @@ export class StudioLink {
     this.conn.start();
     this.unsub.push(
       this.conn.onMessage((msg, receivedAt) => {
+        if (msg.type !== 'hello' && msg.type !== 'peer' && msg.type !== 'error') {
+          this.lastPhoneMsgAt = receivedAt;
+        }
         switch (msg.type) {
           case 'hello':
           case 'peer':
@@ -161,6 +167,7 @@ export class StudioLink {
         lastReal && lastRealLocal !== null ? lastReal.receivedAt - lastRealLocal : null,
       phone: this.phone,
       lastStepAt: last ? last.receivedAt : null,
+      phoneSilentMs: this.lastPhoneMsgAt === null ? null : performance.now() - this.lastPhoneMsgAt,
     };
   }
 

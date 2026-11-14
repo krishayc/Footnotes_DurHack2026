@@ -32,6 +32,11 @@ export interface LinkSnapshot {
 
 const MAX_BACKOFF_MS = 5000;
 const CONNECT_TIMEOUT_MS = 6000;
+const KEEPALIVE_MS = 3000;
+/** Heard nothing for this long = the connection is dead. */
+const SILENT_LIMIT_MS = 8000;
+/** Coming back to the page after this long without news: reconnect at once. */
+const STALE_ON_RETURN_MS = 4000;
 
 export class RoomConnection {
   private ws: WebSocket | null = null;
@@ -39,6 +44,9 @@ export class RoomConnection {
   private retryTimer: number | undefined;
   private closedByUs = false;
   private watchdog: number | undefined;
+  private liveness: number | undefined;
+  /** When we last heard ANYTHING from the server (performance.now()). */
+  private lastHeardAt = 0;
   private snapshot: LinkSnapshot = {
     status: 'connecting',
     peerConnected: false,
@@ -70,12 +78,16 @@ export class RoomConnection {
     document.addEventListener('visibilitychange', this.onVisible);
     window.addEventListener('online', this.onVisible);
     this.connect();
+    // Every 3 s: say "still here?" and check we've heard something recently.
+    window.clearInterval(this.liveness);
+    this.liveness = window.setInterval(() => this.checkAlive(), KEEPALIVE_MS);
   }
 
   stop() {
     this.closedByUs = true;
     window.clearTimeout(this.retryTimer);
     window.clearTimeout(this.watchdog);
+    window.clearInterval(this.liveness);
     document.removeEventListener('visibilitychange', this.onVisible);
     window.removeEventListener('online', this.onVisible);
     this.ws?.close();
@@ -114,6 +126,7 @@ export class RoomConnection {
     }, CONNECT_TIMEOUT_MS);
 
     ws.onopen = () => {
+      this.lastHeardAt = performance.now();
       ws.send(
         JSON.stringify({
           type: 'join',
@@ -126,8 +139,9 @@ export class RoomConnection {
 
     ws.onmessage = (ev) => {
       const receivedAt = performance.now(); // stamp first, before any parsing work
+      if (this.ws === ws) this.lastHeardAt = receivedAt;
       const msg = parseMessage(ev.data);
-      if (!msg) return;
+      if (!msg || msg.type === 'keepalive') return;
       if (msg.type === 'hello') {
         welcomed = true;
         window.clearTimeout(this.watchdog);
@@ -157,10 +171,40 @@ export class RoomConnection {
     this.backoff = Math.min(MAX_BACKOFF_MS, this.backoff * 2);
   }
 
+  /**
+   * A socket can die without telling us: the phone locks, Safari freezes the page, WiFi
+   * changes. It still says "open" but nothing arrives. If we've heard nothing (not even a
+   * keepalive reply) for a while, throw it away and reconnect.
+   */
+  private checkAlive() {
+    const ws = this.ws;
+    if (this.closedByUs || !ws || ws.readyState !== WebSocket.OPEN) return;
+    // Hidden tabs run timers rarely; only judge silence while the page is on screen
+    // (coming back on screen is handled by onVisible).
+    if (
+      document.visibilityState === 'visible' &&
+      performance.now() - this.lastHeardAt > SILENT_LIMIT_MS
+    ) {
+      console.warn('[footnotes] connection went silent, reconnecting');
+      this.handleDrop(ws);
+      ws.close();
+      return;
+    }
+    ws.send(JSON.stringify({ type: 'keepalive' }));
+  }
+
   /** Coming back to the page (or back online): reconnect straight away if we need to. */
   private onVisible = () => {
     if (document.visibilityState !== 'visible' || this.closedByUs) return;
-    if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+    const ws = this.ws;
+    const stale = performance.now() - this.lastHeardAt > STALE_ON_RETURN_MS;
+    if (!ws || ws.readyState === WebSocket.CLOSED || (ws.readyState === WebSocket.OPEN && stale)) {
+      // After the phone was locked, an "open" socket is usually dead: start fresh.
+      if (ws) {
+        this.handleDrop(ws);
+        ws.close();
+      }
+      window.clearTimeout(this.retryTimer);
       this.backoff = 500;
       this.connect();
     }

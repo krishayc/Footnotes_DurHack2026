@@ -117,6 +117,11 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    if (msg.type === 'keepalive') {
+      send(ws, { type: 'keepalive' });
+      return;
+    }
+
     if (msg.type === 'join') {
       if (msg.protocol !== PROTOCOL_VERSION) {
         send(ws, { type: 'error', code: 'version-mismatch', message: 'Please reload the page.' });

@@ -10,6 +10,7 @@ import { RAW_SERIES, STEP_SERIES, SignalGraph, type GraphMode } from './SignalGr
 import { StepTest, TuningPanel } from './StepTools';
 import { useSteps } from './steps';
 import { useSensorLink } from './link';
+import { PocketScreen } from './PocketScreen';
 import type { LinkSnapshot } from '../shared/connection';
 import { Link } from 'react-router-dom';
 import './sensor.css';
@@ -32,6 +33,8 @@ export function SensorPage() {
   const wake = useWakeLock();
   const link = useSensorLink(room);
   const [graph, setGraph] = useState<GraphMode>('steps');
+  // Pocket mode is on by default once the sensor runs, so pocket bumps can't press anything.
+  const [pocket, setPocket] = useState(true);
 
   const active = m.state === 'running' || m.state === 'waiting' || m.state === 'requesting';
 
@@ -39,10 +42,15 @@ export function SensorPage() {
   function start() {
     motion.start();
     wakeLock.enable();
+    setPocket(true);
   }
   function stop() {
     motion.stop();
     wakeLock.disable();
+  }
+
+  if (m.state === 'running' && pocket) {
+    return <PocketScreen room={room} link={link} onExit={() => setPocket(false)} />;
   }
 
   return (
@@ -91,6 +99,13 @@ export function SensorPage() {
           <p className="sensor__status sensor__status--on" role="status">
             <span className="dot" aria-hidden="true" />
             Sensor is on
+          </p>
+          <Button onClick={() => setPocket(true)}>Back to pocket mode</Button>
+          <p className="sensor__note">
+            Details for tuning. Put the phone in your pocket from pocket mode, so bumps can't press
+            anything here.
+            {motion.restarts > 0 &&
+              ` The sensor stalled and was restarted ${motion.restarts === 1 ? 'once' : `${motion.restarts} times`}.`}
           </p>
 
           <StepCounter />
