@@ -7,8 +7,10 @@ import { useStudioLink, type StudioLinkSnapshot } from './link';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { ControlPanel } from './ControlPanel';
+import { SyncPanel } from './SyncPanel';
 import { ModeBar, SimControls, TapPad } from './ModeBar';
 import { session } from './session';
+import { sync } from './sync';
 import { stepBus } from './steps';
 import { useStudioStats } from './useStudioStats';
 import '../ui/ui.css';
@@ -46,7 +48,8 @@ export function StudioPage() {
   useEffect(() => stepBus.attachLink(link), [link]);
   useEffect(() => {
     // Dev only: poke at the engine from the browser console (window.__fn).
-    if (import.meta.env.DEV) Object.assign(window, { __fn: { audio, stepBus, session, link } });
+    if (import.meta.env.DEV)
+      Object.assign(window, { __fn: { audio, stepBus, session, link, sync } });
   }, [link]);
   useEffect(() => {
     session.attachLink(link);
@@ -87,8 +90,9 @@ export function StudioPage() {
           <LiveLane link={link} />
           <p className="studio__legend">
             <span className="legend-bar" aria-hidden="true" /> a beat (always steady)
-            <span className="legend-dot legend-dot--step" aria-hidden="true" /> a step, where the
-            foot landed
+            <span className="legend-dot legend-dot--on" aria-hidden="true" /> step on time
+            <span className="legend-dot legend-dot--near" aria-hidden="true" /> a bit early or late
+            <span className="legend-dot legend-dot--off" aria-hidden="true" /> off the beat
             {live && (
               <>
                 <span className="legend-line" aria-hidden="true" /> movement felt by the phone
@@ -98,6 +102,7 @@ export function StudioPage() {
         </section>
 
         <aside className="studio__side">
+          <SyncPanel />
           <ControlPanel />
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}

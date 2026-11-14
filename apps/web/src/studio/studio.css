@@ -403,3 +403,96 @@
     position: static;
   }
 }
+
+/* ---------- Stage 5: sync ---------- */
+.legend-dot--on {
+  background: var(--d-on-time);
+  margin-left: var(--s-3);
+}
+.legend-dot--near {
+  background: var(--d-slightly-off);
+  margin-left: var(--s-3);
+}
+.legend-dot--off {
+  background: var(--d-note-1);
+  margin-left: var(--s-3);
+}
+.sync__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s-4);
+}
+.sync__words {
+  color: var(--d-text);
+  font-weight: 700;
+  font-size: 18px;
+}
+.sync__pct {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 64px;
+  line-height: 0.95;
+  color: var(--c-highlight);
+  font-variant-numeric: tabular-nums;
+}
+.sync__pct span {
+  font-size: 28px;
+}
+.sync__bar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--d-bg-3);
+  overflow: hidden;
+}
+.sync__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--c-highlight);
+  transition: width 400ms var(--ease);
+}
+.sync__detail {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--s-4);
+  align-items: center;
+}
+.sync__nums {
+  margin: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.sync__nums dt {
+  color: var(--d-muted);
+  font-size: 14px;
+}
+.sync__nums dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.phase__lbl {
+  fill: var(--d-muted);
+  font-size: 12px;
+  font-family: var(--font-body);
+}
+.phase {
+  overflow: visible;
+}
+.panel__p--sm {
+  font-size: 14px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-weight: 700;
+  font-size: 16px;
+}
+.check input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--c-highlight);
+}

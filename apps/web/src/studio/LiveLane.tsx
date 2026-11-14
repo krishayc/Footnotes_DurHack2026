@@ -13,6 +13,7 @@ import { useEffect, useRef } from 'react';
 import { audio } from './audio/engine';
 import type { StudioLink } from './link';
 import { stepBus } from './steps';
+import { phaseColour, sync } from './sync';
 
 interface Props {
   link: StudioLink;
@@ -129,14 +130,16 @@ export function LiveLane({ link, pastMs = 7000, futureMs = 1200 }: Props) {
       for (const s of stepBus.recent) {
         if (s.t < t0 || s.t > t1) continue;
         const x = xOf(s.t);
+        // Coloured by timing once the beat plays: green on time, gold a bit off.
+        const colour = phaseColour(sync.phaseOf.get(s));
         ctx.beginPath();
         ctx.arc(x, laneY, 10, 0, Math.PI * 2);
         if (s.inferred) {
-          ctx.strokeStyle = '#7FD1A8';
+          ctx.strokeStyle = colour;
           ctx.lineWidth = 2.5;
           ctx.stroke();
         } else {
-          ctx.fillStyle = '#7FD1A8';
+          ctx.fillStyle = colour;
           ctx.fill();
         }
       }

@@ -11,6 +11,7 @@
  * so it can't tell which source is active. All times are laptop performance.now() ms.
  */
 import { Store, loadJSON, saveJSON } from '../shared/store';
+import { audio } from './audio/engine';
 import type { StudioLink } from './link';
 
 export type StepMode = 'live' | 'tap' | 'sim';
@@ -27,6 +28,8 @@ interface StepSettings {
   simSpm: number;
   /** Step-to-step timing variability, fraction (0.04 = ±4%). */
   simJitter: number;
+  /** Simulated walker steps along with the beat (when it plays) instead of its own pace. */
+  simFollow: boolean;
 }
 
 const KEY = 'footnotes.studio.steps.v1';
@@ -35,7 +38,7 @@ const FALLBACK_LATENCY_MS = 150;
 
 class StepBus {
   readonly settings = new Store<StepSettings>(
-    loadJSON<StepSettings>(KEY, { mode: 'live', simSpm: 100, simJitter: 0.04 }),
+    loadJSON<StepSettings>(KEY, { mode: 'live', simSpm: 100, simJitter: 0.04, simFollow: false }),
   );
   /** Recent steps, oldest first. */
   readonly recent: BusStep[] = [];
@@ -107,11 +110,25 @@ class StepBus {
     const now = performance.now();
     while (this.simNext <= now) {
       this.emit({ t: this.simNext, inferred: false, source: 'sim' });
-      const { simSpm, simJitter } = this.settings.get();
-      const gauss =
-        Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
-      this.simNext += (60000 / simSpm) * (1 + gauss * simJitter);
+      this.simNext = this.planNextSimStep(this.simNext);
     }
+  }
+
+  /** When the simulated walker's next foot lands. */
+  private planNextSimStep(prev: number): number {
+    const { simSpm, simJitter, simFollow } = this.settings.get();
+    const gauss =
+      Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+    const last = audio.beats[audio.beats.length - 1];
+    if (simFollow && audio.state.get().playing && last) {
+      // Aim for the next beat at least half a beat away, with human timing wobble.
+      const period = audio.periodMs;
+      const after = prev + period / 2;
+      let target = audio.beats.find((b) => b.t > after)?.t;
+      if (target === undefined) target = last.t + Math.ceil((after - last.t) / period) * period;
+      return Math.max(prev + 250, target + gauss * simJitter * period);
+    }
+    return prev + (60000 / simSpm) * (1 + gauss * simJitter);
   }
 }
 

@@ -26,7 +26,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 2     | Step detection                       | Done   |
 | 3     | Phone to laptop link + clock sync    | Done   |
 | 4     | Calibration + steady beat            | Done   |
-| 5     | Sync scoring                         |        |
+| 5     | Sync scoring                         | Done   |
 | 6     | Adaptive arrangement                 |        |
 | 7     | Visual score + patient screens       |        |
 | 8     | Freeze detection + Daphnet           |        |
@@ -98,6 +98,23 @@ docs/                research notes, HTTPS setup, demo script, pitch
 4. **Fallbacks:** Tap mode (spacebar or a big pad = one step) and a Simulated walker with
    adjustable pace and unevenness. Every step source feeds the same "step bus", so everything
    downstream works the same whichever is active.
+
+## Sync scoring (how in step are they?)
+
+- **Phase** of each step: where it lands relative to the nearest beat, from −0.5 (half a beat
+  early) to +0.5 (half a beat late). Picture the beat as a clock face; each step is a point on it.
+- **Circular statistics** over the last 8 steps, the standard tool in sensorimotor
+  synchronisation research: average the steps as unit arrows. The arrow's length **R** (0 to 1)
+  says how consistent the timing is; its direction is the **mean phase** (early or late). An
+  ordinary average fails here because phase wraps: +0.49 and −0.49 are almost the same moment.
+- **Tempo match**: their pace ÷ the beat; within ±3% is free, further off is penalised.
+- **Score** = R × tempo factor × a gentle on-the-beat factor, then smoothed so it never flickers,
+  and fading if the steps stop.
+- Measured with the Simulated walker against a 100 BPM beat: following the beat scores
+  **0.98** (R 0.99); walking at its own 94 steps/min scores **0.25** (R 0.42); after locking
+  back in it climbs from 0.25 to 0.89 in about 7 s; the largest change in any 250 ms when
+  locked is 0.006.
+- A **timing correction** slider cancels constant delays (speakers, step detection).
 
 ## Clock sync (phone ↔ laptop)
 

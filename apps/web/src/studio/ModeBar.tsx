@@ -72,9 +72,17 @@ export function SimControls() {
       <h2 id="sim-h" className="panel__h">
         Simulated walker
       </h2>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={s.simFollow}
+          onChange={(e) => stepBus.settings.set({ simFollow: e.target.checked })}
+        />
+        Follows the beat (when it plays)
+      </label>
       <div className="slider slider--dark">
         <label htmlFor="sim-spm">
-          Pace <output htmlFor="sim-spm">{s.simSpm} steps/min</output>
+          Own pace <output htmlFor="sim-spm">{s.simSpm} steps/min</output>
         </label>
         <input
           id="sim-spm"
@@ -102,7 +110,7 @@ export function SimControls() {
       </div>
       <Button
         variant="secondary"
-        onClick={() => stepBus.settings.set({ simSpm: 100, simJitter: 0.04 })}
+        onClick={() => stepBus.settings.set({ simSpm: 100, simJitter: 0.04, simFollow: false })}
       >
         Reset walker
       </Button>
