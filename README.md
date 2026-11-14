@@ -22,7 +22,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | Stage | What                                 | Status |
 | ----- | ------------------------------------ | ------ |
 | 0     | Plan, scaffold, design tokens, HTTPS | Done   |
-| 1     | Phone sensor page                    |        |
+| 1     | Phone sensor page                    | Done   |
 | 2     | Step detection                       |        |
 | 3     | Phone to laptop link + clock sync    |        |
 | 4     | Calibration + steady beat            |        |
@@ -68,7 +68,7 @@ apps/web/            Vite + React + TypeScript (routes: / , /sensor , /studio)
   src/styles/        design tokens (colours, type, spacing, radii, motion) as CSS variables
   src/ui/            Button (big, debounced), Logo, icons
   src/landing/       role picker + room code entry + device checks
-  src/sensor/        phone app
+  src/sensor/        phone app: motion sensor (ring buffer, permission, rate), wake lock, live graph
   src/studio/        laptop studio
   public/samples/    bundled audio samples (offline)
   public/replays/    preprocessed Daphnet clips
