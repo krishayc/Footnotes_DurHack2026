@@ -8,6 +8,8 @@ import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { ControlPanel } from './ControlPanel';
 import { SyncPanel } from './SyncPanel';
+import { LayersPanel, MusicDebug } from './LayersPanel';
+import { arranger } from './music/arranger';
 import { ModeBar, SimControls, TapPad } from './ModeBar';
 import { session } from './session';
 import { sync } from './sync';
@@ -44,12 +46,34 @@ export function StudioPage() {
   const sess = useStore(session.state);
   const a = useStore(audio.state);
   const stats = useStudioStats();
+  const [debug, setDebug] = useState(false);
+
+  // Press D (outside text fields) to open the hidden music debug panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'd' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.target as HTMLElement).closest('input, textarea')) return;
+      setDebug((d) => !d);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => stepBus.attachLink(link), [link]);
   useEffect(() => {
     // Dev only: poke at the engine from the browser console (window.__fn).
     if (import.meta.env.DEV)
-      Object.assign(window, { __fn: { audio, stepBus, session, link, sync } });
+      Object.assign(window, {
+        __fn: {
+          audio,
+          stepBus,
+          session,
+          link,
+          sync,
+          arranger,
+          measureMix: () => import('./music/measure').then((m) => m.measureMix()),
+        },
+      });
   }, [link]);
   useEffect(() => {
     session.attachLink(link);
@@ -102,7 +126,9 @@ export function StudioPage() {
         </section>
 
         <aside className="studio__side">
+          {debug && <MusicDebug onClose={() => setDebug(false)} />}
           <SyncPanel />
+          <LayersPanel />
           <ControlPanel />
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}

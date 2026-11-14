@@ -12,9 +12,13 @@
  * step with this log.
  *
  * Tempo changes (offset tweaks, "a bit faster") glide over 4 beats instead of jumping.
+ *
+ * Music (Stage 6): an eighth-note clock drives the layers in music/band.ts; at each bar line
+ * the arranger (music/arranger.ts) decides which layers should be playing.
  */
 import * as Tone from 'tone';
 import { Store } from '../../shared/store';
+import { createBand, type Band } from '../music/band';
 
 export interface Beat {
   /** performance.now() time the beat is heard, ms. */
@@ -47,17 +51,30 @@ class AudioEngine {
   readonly beats: Beat[] = [];
   private beatListeners = new Set<(b: Beat) => void>();
   private built = false;
-  private kick!: Tone.MembraneSynth;
-  private tick!: Tone.NoiseSynth;
   private master!: Tone.Volume;
+  band: Band | null = null;
   private beatIndex = 0;
-  private repeatId: number | null = null;
+  private eighthIndex = 0;
+  private repeatIds: number[] = [];
+  private barListeners = new Set<(time: number, bar: number) => void>();
+  private stopListeners = new Set<() => void>();
   /** Smoothed (performance.now() ms) − (audio clock ms) for heard sound. */
   private clockMap: number | null = null;
 
   onBeat(fn: (b: Beat) => void) {
     this.beatListeners.add(fn);
     return () => this.beatListeners.delete(fn);
+  }
+
+  /** Called at the start of every bar (audio time), before that bar's notes are scheduled. */
+  onBar(fn: (time: number, bar: number) => void) {
+    this.barListeners.add(fn);
+    return () => this.barListeners.delete(fn);
+  }
+
+  onStop(fn: () => void) {
+    this.stopListeners.add(fn);
+    return () => this.stopListeners.delete(fn);
   }
 
   /** Must be called from a click: browsers only allow audio after a user gesture. */
@@ -77,12 +94,17 @@ class AudioEngine {
   play(tempo: number) {
     if (this.state.get().status !== 'on') return;
     const transport = Tone.getTransport();
+    this.clearSchedule();
     transport.stop();
-    transport.cancel();
     transport.bpm.value = tempo;
     this.beatIndex = 0;
+    this.eighthIndex = 0;
     this.beats.length = 0;
-    this.repeatId = transport.scheduleRepeat((time) => this.onTransportBeat(time), '4n', 0);
+    this.band?.layers.forEach((_, i) => this.band!.setLayer(i, false));
+    this.repeatIds = [
+      transport.scheduleRepeat((time) => this.onTransportBeat(time), '4n', 0),
+      transport.scheduleRepeat((time) => this.onTransportEighth(time), '8n', 0),
+    ];
     transport.start('+0.15');
     this.state.set({ playing: true, tempo });
   }
@@ -90,9 +112,16 @@ class AudioEngine {
   stop() {
     const transport = Tone.getTransport();
     transport.stop();
-    if (this.repeatId !== null) transport.clear(this.repeatId);
-    this.repeatId = null;
+    this.clearSchedule();
+    this.band?.layers.forEach((_, i) => this.band!.setLayer(i, false));
     this.state.set({ playing: false });
+    for (const fn of this.stopListeners) fn();
+  }
+
+  private clearSchedule() {
+    const transport = Tone.getTransport();
+    for (const id of this.repeatIds) transport.clear(id);
+    this.repeatIds = [];
   }
 
   /** Change tempo smoothly (over 4 beats). Never call this per step: the beat leads. */
@@ -121,33 +150,23 @@ class AudioEngine {
     const comp = new Tone.Compressor({ threshold: -18, ratio: 3, attack: 0.01, release: 0.2 });
     this.master = new Tone.Volume(this.state.get().volumeDb);
     this.master.chain(comp, limiter);
-
-    // L0 pulse body: a soft, warm "thump". D2 (key of D) with a short downward pitch sweep,
-    // low-passed so it is round rather than clicky. Pitched high enough for laptop speakers.
-    const kickFilter = new Tone.Filter({ frequency: 900, type: 'lowpass', rolloff: -24 });
-    this.kick = new Tone.MembraneSynth({
-      pitchDecay: 0.035,
-      octaves: 2.5,
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.002, decay: 0.42, sustain: 0, release: 0.2 },
-      volume: -2,
-    }).chain(kickFilter, this.master);
-
-    // A subtle soft "tick" on top for a crisp timing edge; a little stronger on beat 1.
-    const tickFilter = new Tone.Filter({ frequency: 2600, type: 'bandpass', Q: 1.2 });
-    this.tick = new Tone.NoiseSynth({
-      noise: { type: 'pink' },
-      envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.02 },
-      volume: -22,
-    }).chain(tickFilter, this.master);
-
+    this.band = createBand(this.master);
     this.built = true;
+  }
+
+  /** Every eighth note: tell the arranger about new bars, then let each layer play. */
+  private onTransportEighth(time: number) {
+    const slot = this.eighthIndex % 8;
+    const bar = Math.floor(this.eighthIndex / 8);
+    this.eighthIndex++;
+    if (slot === 0) for (const fn of this.barListeners) fn(time, bar);
+    const slotSec = 30 / Tone.getTransport().bpm.getValueAtTime(time);
+    for (const layer of this.band?.layers ?? []) layer.play(time, bar, slot, slotSec);
   }
 
   private onTransportBeat(time: number) {
     const beatInBar = this.beatIndex % BEATS_PER_BAR;
-    this.kick.triggerAttackRelease('D2', '8n', time, beatInBar === 0 ? 1 : 0.85);
-    this.tick.triggerAttackRelease('32n', time, beatInBar === 0 ? 1 : 0.55);
+    this.band?.playPulse(time, beatInBar);
 
     const beat: Beat = {
       t: this.audioToPerf(time),

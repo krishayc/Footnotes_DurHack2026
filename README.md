@@ -19,19 +19,19 @@ A live visual score on the laptop shows the walker and the music locking togethe
 
 ## Status
 
-| Stage | What                                 | Status |
-| ----- | ------------------------------------ | ------ |
-| 0     | Plan, scaffold, design tokens, HTTPS | Done   |
-| 1     | Phone sensor page                    | Done   |
-| 2     | Step detection                       | Done   |
-| 3     | Phone to laptop link + clock sync    | Done   |
-| 4     | Calibration + steady beat            | Done   |
-| 5     | Sync scoring                         | Done   |
-| 6     | Adaptive arrangement                 |        |
-| 7     | Visual score + patient screens       |        |
-| 8     | Freeze detection + Daphnet           |        |
-| 9     | Demo hardening                       |        |
-| 10    | Submission materials                 |        |
+| Stage | What                                 | Status                         |
+| ----- | ------------------------------------ | ------------------------------ |
+| 0     | Plan, scaffold, design tokens, HTTPS | Done                           |
+| 1     | Phone sensor page                    | Done                           |
+| 2     | Step detection                       | Done                           |
+| 3     | Phone to laptop link + clock sync    | Done                           |
+| 4     | Calibration + steady beat            | Done                           |
+| 5     | Sync scoring                         | Done                           |
+| 6     | Adaptive arrangement                 | Done (listening check pending) |
+| 7     | Visual score + patient screens       |                                |
+| 8     | Freeze detection + Daphnet           |                                |
+| 9     | Demo hardening                       |                                |
+| 10    | Submission materials                 |                                |
 
 ## Run it
 
@@ -115,6 +115,28 @@ docs/                research notes, HTTPS setup, demo script, pitch
   back in it climbs from 0.25 to 0.89 in about 7 s; the largest change in any 250 ms when
   locked is 0.006.
 - A **timing correction** slider cancels constant delays (speakers, step detection).
+
+## The music (adaptive arrangement)
+
+- **Fixed key and chords:** D major, a 4-bar loop **Dmaj7 → Bm7 → Gmaj7 → A7sus4** (the
+  I–vi–IV–V shape softened with 7ths). The harmony never changes; only the layers do.
+- **Layers:** L0 Pulse (always on, the loudest timing reference), L1 Shakers, L2 Bass,
+  L3 Keys (electric-piano style), L4 Melody (a 4-bar pentatonic motif with an answering
+  variation), L5 Sparkle (a quiet high arpeggio).
+- **All synthesised in code** with Tone.js: works offline, no sample licences, nothing extra to
+  download. Each voice is filtered and enveloped to be soft; a shared reverb, compressor and
+  limiter glue the mix and stop any harsh peak.
+- **Balanced by measurement:** each layer is rendered offline and its loudness measured
+  (`await __fn.measureMix()` in the dev console). The pulse sits about 9 dB above the bass and
+  about 13 dB above the keys and melody.
+- **Arrangement rules:** sync score → number of layers, with **hysteresis** (a layer enters
+  at a higher score than it leaves: e.g. Bass in at 45%, out below 35%) so nothing flickers.
+  Changes happen only on bar lines with short fades; the music builds **one layer per bar**
+  and strips back **up to two per bar**, so a struggling walker quickly gets a simpler beat.
+- **Measured** with the Simulated walker: locked in = all 6 parts; walking at its own pace
+  strips back to the pulse alone within 4 bars (~10 s); locking back in rebuilds one layer per
+  bar to the full arrangement.
+- **Debug panel:** press **D** on the Studio to fake the score or force any layer on/off.
 
 ## Clock sync (phone ↔ laptop)
 
