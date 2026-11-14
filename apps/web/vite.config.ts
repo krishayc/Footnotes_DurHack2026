@@ -10,6 +10,9 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
  * talks to one origin.
  */
 const useHttps = process.env.HTTPS === '1';
+// Where the relay server is (override with SERVER_PORT / WEB_PORT to run a second copy).
+const serverPort = Number(process.env.SERVER_PORT ?? 8787);
+const webPort = Number(process.env.WEB_PORT ?? 5173);
 const plugins: PluginOption[] = [react()];
 if (useHttps) plugins.push(basicSsl({ name: 'footnotes-dev' }));
 
@@ -17,13 +20,13 @@ export default defineConfig({
   plugins,
   server: {
     host: true, // listen on the LAN so a phone can reach it
-    port: 5173,
+    port: webPort,
     strictPort: true,
     allowedHosts: ['.trycloudflare.com', '.local'],
     proxy: {
-      '/ws': { target: 'ws://localhost:8787', ws: true },
-      '/health': 'http://localhost:8787',
-      '/api': 'http://localhost:8787',
+      '/ws': { target: `ws://127.0.0.1:${serverPort}`, ws: true },
+      '/health': `http://127.0.0.1:${serverPort}`,
+      '/api': `http://127.0.0.1:${serverPort}`,
     },
   },
   build: { target: 'es2022', sourcemap: true },

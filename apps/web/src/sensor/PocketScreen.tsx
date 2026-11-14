@@ -67,13 +67,18 @@ export function PocketScreen({
   };
 
   const linked = link?.status === 'connected' && link.peerConnected;
+  // Say exactly what's wrong: a wrong room code must not look like a network problem.
   const linkText = !room
     ? 'Not linked to a laptop'
-    : linked
-      ? 'Linked to the laptop'
-      : link?.status === 'connected'
-        ? 'Waiting for the laptop'
-        : 'Reconnecting to the laptop...';
+    : link?.status === 'error'
+      ? `${link.error ?? 'Problem with the room code'} (room ${room})`
+      : linked
+        ? 'Linked to the laptop'
+        : link?.status === 'connected'
+          ? `Waiting for the laptop (room ${room})`
+          : link?.status === 'connecting'
+            ? 'Connecting to the laptop...'
+            : 'Reconnecting to the laptop...';
   const sensing = m.state === 'running' && m.quietMs < 1000;
   const fresh = s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
 
