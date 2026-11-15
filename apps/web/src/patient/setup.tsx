@@ -47,7 +47,7 @@ const CARDS = [
   },
   {
     title: 'Music that grows with you',
-    text: 'When your steps fall in time with the beat, music joins in: bongos, bass, guitar and a flute tune. If you drift, it goes back to a simple beat so it is easy to find again.',
+    text: 'When your steps fall in time with the beat, music joins in: shakers, bass, piano and a melody. If you drift, it goes back to a simple beat so it is easy to find again.',
   },
   {
     title: 'Phone in your pocket',

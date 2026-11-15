@@ -35,7 +35,7 @@ export interface Beat {
 
 /** A note played by a music layer, for the visual score (performance.now() times). */
 export interface ScoreNote {
-  layer: number; // 0 Bongos, 1 Bass, 2 Guitar, 3 Flute, 4 Guitar fills, 5 Recovery motif
+  layer: number; // 0 Shakers, 1 Bass, 2 Keys, 3 Melody, 4 Sparkle, 5 Recovery motif
   midi: number;
   t: number;
   durMs: number;

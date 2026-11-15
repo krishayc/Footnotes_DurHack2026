@@ -1,7 +1,7 @@
 /**
  * Which music layers should play, given the sync score.
  *
- * Layers on top of the always-on pulse (L0):  1 Bongos, 2 Bass, 3 Guitar, 4 Flute, 5 Guitar fills.
+ * Layers on top of the always-on pulse (L0):  1 Shakers, 2 Bass, 3 Keys, 4 Melody, 5 Sparkle.
  *
  * HYSTERESIS: a layer comes IN at a higher score than the one at which it goes OUT. If the
  * score hovers around one threshold (say 0.45), the layer doesn't flicker on and off every

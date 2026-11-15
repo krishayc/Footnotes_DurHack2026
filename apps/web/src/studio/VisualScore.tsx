@@ -6,11 +6,11 @@
  *
  * Top to bottom, each lane appears only while its layer plays, and is drawn from the ACTUAL
  * notes being played (not a decoration):
- *   Guitar fills  tiny high twinkles
- *   Flute    a smooth line through the tune's pitches
- *   Guitar   a smooth line through each chord's centre, with the chord notes as soft dots
+ *   Sparkle  tiny high twinkles
+ *   Melody   a smooth line through the melody's pitches
+ *   Keys     a smooth line through each chord's centre, with the chord notes as soft dots
  *   Bass     a stepped line, one step per bass note
- *   Bongos   small dots on the eighth notes
+ *   Shakers  small dots on the eighth notes
  *   Steps    the beat as marigold bars, each step as a dot placed by its timing
  *            (green on time, gold a bit early or late)
  * Faint vertical lines mark beats; stronger ones mark bar lines.
@@ -40,10 +40,10 @@ interface Lane {
 }
 
 const LANES: Lane[] = [
-  { layer: 4, label: LAYER_NAMES[4], h: 0.1, lo: 62, hi: 80, colour: '#E7C98B' },
-  { layer: 3, label: LAYER_NAMES[3], h: 0.2, lo: 65, hi: 78, colour: '#F2B544' },
-  { layer: 2, label: LAYER_NAMES[2], h: 0.17, lo: 50, hi: 68, colour: '#9FB5AC' },
-  { layer: 1, label: LAYER_NAMES[1], h: 0.13, lo: 32, hi: 42, colour: '#7FA394' },
+  { layer: 4, label: LAYER_NAMES[4], h: 0.1, lo: 66, hi: 86, colour: '#E7C98B' },
+  { layer: 3, label: LAYER_NAMES[3], h: 0.2, lo: 60, hi: 76, colour: '#F2B544' },
+  { layer: 2, label: LAYER_NAMES[2], h: 0.17, lo: 51, hi: 66, colour: '#9FB5AC' },
+  { layer: 1, label: LAYER_NAMES[1], h: 0.13, lo: 30, hi: 46, colour: '#7FA394' },
   { layer: 0, label: LAYER_NAMES[0], h: 0.08, lo: 0, hi: 1, colour: '#6E9486' },
   { layer: -1, label: 'Steps', h: 0.2, lo: 0, hi: 1, colour: '#7FD1A8' },
 ];
@@ -176,7 +176,7 @@ export function VisualScore() {
       if (recNotes.length && rec > 0.02) {
         const yTop = boxes[1].y;
         const yBot = boxes[3].y + boxes[3].h;
-        const Yr = (midi: number) => yBot - ((midi - 76) / (85 - 76)) * (yBot - yTop) * 0.8 - 20;
+        const Yr = (midi: number) => yBot - ((midi - 72) / (82 - 72)) * (yBot - yTop) * 0.8 - 20;
         ctx.globalAlpha = Math.max(0.3, rec);
         ctx.strokeStyle = '#9CC7E0';
         ctx.fillStyle = '#9CC7E0';
