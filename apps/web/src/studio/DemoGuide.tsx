@@ -79,7 +79,7 @@ const STEPS: Step[] = [
       label: 'Simulated walker drifts off',
       run: () => {
         sim();
-        stepBus.settings.set({ simFollow: false, simSpm: 88 });
+        stepBus.settings.set({ simFollow: false, simSpm: 78 });
       },
     },
   },

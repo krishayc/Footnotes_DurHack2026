@@ -22,6 +22,13 @@
  *    beats is "locked", but on the beat is the goal). R carries most of the weight.
  *    A constant small lag is normal (people tend to step slightly early) and costs little.
  *
+ * EASY MODE (the Studio's default, for first-time walkers and demos): pace may be up to 8% off
+ *    with no penalty (zero at 30%); being consistently early or late barely matters; the two
+ *    legs are judged separately (a pocket phone feels the near and far leg at slightly
+ *    different moments, which otherwise looks like uneven timing); and the score is lifted
+ *    with a gentle curve (score^0.6), so "fairly in step" brings the first instruments in
+ *    sooner. Full music still needs real locking in.
+ *
  * 5. SMOOTHING: the score moves only part of the way toward each new value (an exponential
  *    moving average), and decays gently if the steps stop, so the music never flickers.
  */
@@ -94,6 +101,8 @@ export interface SyncStats {
 }
 
 export const SYNC_WINDOW = 8;
+export type SyncDifficulty = 'easy' | 'normal';
+const EASY = { tolerance: 0.08, zeroAt: 0.3, accuracyFloor: 0.9, curve: 0.6 };
 const MIN_STEPS = 4;
 const TEMPO_TOLERANCE = 0.03;
 const TEMPO_ZERO_AT = 0.15;
@@ -115,24 +124,48 @@ export function syncStats(
   phases: readonly number[],
   stepTimes: readonly number[],
   tempoBpm: number,
+  difficulty: SyncDifficulty = 'normal',
 ): SyncStats | null {
   if (phases.length < MIN_STEPS) return null;
-  const { R, meanPhase } = circularStats(phases);
+  const easy = difficulty === 'easy';
+  const all = circularStats(phases);
+  const { meanPhase } = all;
+  let R = all.R;
+  if (easy) {
+    // Each leg on its own: alternate steps are the same leg.
+    const legA = phases.filter((_, i) => i % 2 === 0);
+    const legB = phases.filter((_, i) => i % 2 === 1);
+    if (legA.length >= 2 && legB.length >= 2)
+      R = Math.max(R, (circularStats(legA).R + circularStats(legB).R) / 2);
+  }
 
   const gaps: number[] = [];
   for (let i = 1; i < stepTimes.length; i++) {
     const g = stepTimes[i] - stepTimes[i - 1];
     if (g > 0 && g < 2500) gaps.push(g);
   }
-  const cadenceSpm = gaps.length >= 2 ? 60000 / median(gaps) : null;
+  // Easy: pace from stride to stride (two steps), which ignores the near/far leg timing
+  // difference that makes single step gaps alternate short-long.
+  const strides: number[] = [];
+  for (let i = 2; i < stepTimes.length; i++) {
+    const g = stepTimes[i] - stepTimes[i - 2];
+    if (g > 0 && g < 5000) strides.push(g / 2);
+  }
+  const cadenceSpm =
+    easy && strides.length >= 2
+      ? 60000 / median(strides)
+      : gaps.length >= 2
+        ? 60000 / median(gaps)
+        : null;
   const tempoRatio = cadenceSpm ? cadenceSpm / tempoBpm : null;
   const mismatch = tempoRatio ? Math.abs(tempoRatio - 1) : 0;
-  const tempoFactor = Math.max(
-    0,
-    Math.min(1, 1 - (mismatch - TEMPO_TOLERANCE) / (TEMPO_ZERO_AT - TEMPO_TOLERANCE)),
-  );
-  // 1 on the beat, 0.5 exactly between beats.
-  const accuracyFactor = 0.75 + 0.25 * Math.cos(2 * Math.PI * meanPhase);
+  const tol = easy ? EASY.tolerance : TEMPO_TOLERANCE;
+  const zeroAt = easy ? EASY.zeroAt : TEMPO_ZERO_AT;
+  const tempoFactor = Math.max(0, Math.min(1, 1 - (mismatch - tol) / (zeroAt - tol)));
+  // 1 on the beat, 0.5 exactly between beats (easy: 0.8).
+  const floor = easy ? EASY.accuracyFloor : 0.75;
+  const accuracyFactor = floor + (1 - floor) * Math.cos(2 * Math.PI * meanPhase);
+  const product = R * tempoFactor * accuracyFactor;
 
   return {
     n: phases.length,
@@ -142,7 +175,7 @@ export function syncStats(
     tempoRatio,
     tempoFactor,
     accuracyFactor,
-    raw: R * tempoFactor * accuracyFactor,
+    raw: easy ? Math.pow(Math.max(0, product), EASY.curve) : product,
   };
 }
 
@@ -159,6 +192,8 @@ export class SyncScorer {
   private _stats: SyncStats | null = null;
   private _score = 0;
   private lastStepT: number | null = null;
+  /** Easy (forgiving) or normal scoring. */
+  difficulty: SyncDifficulty = 'normal';
 
   constructor(
     private readonly window = SYNC_WINDOW,
@@ -188,6 +223,7 @@ export class SyncScorer {
       real.map((s) => s.phase),
       recent.slice(-this.window).map((s) => s.t),
       tempoBpm,
+      this.difficulty,
     );
     this._stats = stats;
     if (stats) this._score += this.smoothing * (stats.raw - this._score);

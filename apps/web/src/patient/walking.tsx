@@ -5,22 +5,14 @@ import { Button } from '../ui/Button';
 import { useStore } from '../shared/store';
 import { sendWalkCommand, walk } from '../sensor/link';
 import { useSteps } from '../sensor/steps';
-import {
-  dayLabel,
-  minutesWords,
-  pauseWords,
-  timingWords,
-  walkLine,
-  walks,
-  type Walk,
-} from './history';
+import { dayLabel, minutesWords, pauseWords, timingWords, walkLine, walks } from './history';
 import { prefs } from './prefs';
 import { BeatPulse, linkProblem, useStartBeatOnce, type Go } from './setup';
 import type { LinkSnapshot } from '../shared/connection';
 import { ScreenWarning } from './ScreenWarning';
 import { StaffPicture } from './StaffPicture';
 import { Screen, SpeakButton } from './ui';
-import { chime, playNotes, speak } from './voice';
+import { chime, speak } from './voice';
 import { finishWalk, isPaused, startWalk, walkSeconds } from './walkSession';
 import { buzz } from '../shared/haptic';
 
@@ -247,14 +239,10 @@ export function EndConfirm({ go }: { go: Go }) {
 
 // ---------------------------------------------------------------- After the walk
 
-const PENTA = [293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25, 739.99]; // D major pentatonic
-
 export function After({ go, id }: { go: Go; id?: string }) {
   const { list } = useStore(walks);
   const w = (id ? list.find((x) => x.id === id) : undefined) ?? list[0];
   const svgRef = useRef<SVGSVGElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [sent, setSent] = useState<string | null>(null);
 
   if (!w) {
     return (
@@ -270,16 +258,6 @@ export function After({ go, id }: { go: Go; id?: string }) {
       </Screen>
     );
   }
-
-  const hear = () => {
-    const step = Math.max(1, Math.ceil(w.points.length / 32));
-    const notes = w.points
-      .filter((_, i) => i % step === 0)
-      .map((pt) => (pt.paused ? null : PENTA[Math.round(pt.score * (PENTA.length - 1))]));
-    setPlaying(true);
-    const ms = playNotes(notes) ?? 0;
-    window.setTimeout(() => setPlaying(false), ms);
-  };
 
   const speech = `${dayLabel(w.startedAt)}. That was a lovely walk. Walked for ${minutesWords(w.durationS)}. Timing: ${timingWords(w.points)}. Pauses: ${pauseWords(w.points)}.`;
   return (
@@ -316,74 +294,9 @@ export function After({ go, id }: { go: Go; id?: string }) {
           <dd>{pauseWords(w.points)}</dd>
         </div>
       </dl>
-      <Button onClick={hear} disabled={playing}>
-        {playing ? 'Playing your walk...' : 'Hear my walk'}
-      </Button>
-      <div className="pt__pair">
-        <Button
-          variant="secondary"
-          onClick={() => void sharePicture(w, svgRef.current).then(setSent)}
-        >
-          Send to physio
-        </Button>
-        <Button variant="secondary" onClick={() => go('home')}>
-          Done
-        </Button>
-      </div>
-      {sent && (
-        <p className="pt__note" role="status">
-          {sent}
-        </p>
-      )}
+      <Button onClick={() => go('home')}>Done</Button>
     </Screen>
   );
-}
-
-/** Make a simple summary picture (PNG) and share it, or download it if sharing isn't available. */
-async function sharePicture(w: Walk, svg: SVGSVGElement | null): Promise<string> {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1080;
-  canvas.height = 720;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#F1F3EE';
-  ctx.fillRect(0, 0, 1080, 720);
-  ctx.fillStyle = '#18211E';
-  ctx.font = '700 52px "Bricolage Grotesque", sans-serif';
-  ctx.fillText('Footnotes: walk summary', 60, 100);
-  ctx.font = '32px "Atkinson Hyperlegible", sans-serif';
-  const lines = [
-    `${dayLabel(w.startedAt)} (${new Date(w.startedAt).toLocaleString('en-GB')})`,
-    `Walked for: ${minutesWords(w.durationS)}`,
-    `Steps: ${w.steps}   Beat: ${w.tempo} steps a minute`,
-    `Timing: ${timingWords(w.points)}`,
-    `Pauses: ${pauseWords(w.points)}`,
-  ];
-  lines.forEach((l, i) => ctx.fillText(l, 60, 170 + i * 48));
-  if (svg) {
-    const xml = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(xml)}`;
-    await img.decode().catch(() => undefined);
-    ctx.fillStyle = '#13201C';
-    ctx.fillRect(60, 430, 960, 240);
-    ctx.drawImage(img, 80, 445, 920, 210);
-  }
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
-  if (!blob) return 'Sorry, the picture could not be made.';
-  const file = new File([blob], 'footnotes-walk.png', { type: 'image/png' });
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: 'My walk' });
-      return 'Shared.';
-    } catch {
-      return 'Not shared.';
-    }
-  }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'footnotes-walk.png';
-  a.click();
-  return 'Saved a picture of your walk.';
 }
 
 // ---------------------------------------------------------------- My walks

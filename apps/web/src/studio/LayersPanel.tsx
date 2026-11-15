@@ -7,12 +7,14 @@ import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { LAYER_NAMES } from './music/band';
 import { arranger, type Force } from './music/arranger';
+import { sync } from './sync';
 
 export function LayersPanel() {
   const st = useStore(arranger.state);
   const { playing } = useStore(audio.state);
   const next = st.on.findIndex((v) => !v);
   const count = st.on.filter(Boolean).length;
+  const { difficulty } = useStore(sync.state);
 
   return (
     <section className="panel" aria-labelledby="layers-h">
@@ -40,6 +42,24 @@ export function LayersPanel() {
           {LAYER_NAMES[next]} comes in at {Math.round(LAYER_UP[next] * 100)}% in step.
         </p>
       )}
+      <div className="seg seg--dark seg--sm" role="group" aria-label="How strict the timing is">
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={difficulty === 'easy'}
+          onClick={() => sync.setDifficulty('easy')}
+        >
+          Easy timing
+        </button>
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={difficulty === 'normal'}
+          onClick={() => sync.setDifficulty('normal')}
+        >
+          Strict timing
+        </button>
+      </div>
     </section>
   );
 }

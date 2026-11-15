@@ -136,6 +136,13 @@ docs/                HTTPS setup, Daphnet evaluation, demo script, pitch, Devpos
   back in it climbs from 0.25 to 0.89 in about 7 s; the largest change in any 250 ms when
   locked is 0.006.
 - A **timing correction** slider cancels constant delays (speakers, step detection).
+- **Easy timing** (the default; Strict is a switch under "Playing now"): pace may be up to 8%
+  off with no penalty, consistently early or late barely matters, each leg's timing is judged
+  separately (a pocket phone feels the near and far leg at slightly different moments), pace
+  is measured stride to stride, and the score is lifted with a gentle curve. Measured with the
+  simulated walker stepping in time with ±10% unevenness: full music after about 17 s on Easy,
+  3 of 5 layers after 20 s on Strict; walking off the beat still strips Easy back to the beat
+  and shakers.
 
 ## Catching the far leg
 

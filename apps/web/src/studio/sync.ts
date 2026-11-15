@@ -2,7 +2,12 @@
  * Scores every step against the beat while the beat is playing (maths in
  * packages/shared/src/dsp/sync.ts). The smoothed score drives the music in Stage 6.
  */
-import { SyncScorer, phaseAgainstBeats, type SyncStats } from '@footnotes/shared';
+import {
+  SyncScorer,
+  phaseAgainstBeats,
+  type SyncDifficulty,
+  type SyncStats,
+} from '@footnotes/shared';
 import { Store, loadJSON, saveJSON } from '../shared/store';
 import { audio } from './audio/engine';
 import { stepBus, type BusStep } from './steps';
@@ -19,10 +24,13 @@ export interface SyncState {
    */
   correctionMs: number;
   active: boolean;
+  /** Easy (default: forgiving, for first-time walkers) or strict scoring. */
+  difficulty: SyncDifficulty;
 }
 
 const KEY = 'footnotes.studio.sync.v1';
 const TICK_MS = 250;
+const DIFF_KEY = 'footnotes.studio.difficulty.v1';
 
 class SyncTracker {
   readonly scorer = new SyncScorer();
@@ -32,11 +40,14 @@ class SyncTracker {
     periodMs: 600,
     correctionMs: loadJSON(KEY, { correctionMs: 0 }).correctionMs,
     active: false,
+    difficulty: loadJSON<{ difficulty: SyncDifficulty }>(DIFF_KEY, { difficulty: 'easy' })
+      .difficulty,
   });
   /** Phase of each scored bus step, for colouring the dots. */
   readonly phaseOf = new WeakMap<BusStep, number>();
 
   constructor() {
+    this.scorer.difficulty = this.state.get().difficulty;
     stepBus.onStep((s) => this.onStep(s));
     audio.state.subscribe(() => {
       const playing = audio.state.get().playing;
@@ -50,6 +61,12 @@ class SyncTracker {
       this.scorer.tick(performance.now(), TICK_MS);
       this.state.set({ score: this.scorer.score });
     }, TICK_MS);
+  }
+
+  setDifficulty(difficulty: SyncDifficulty) {
+    saveJSON(DIFF_KEY, { difficulty });
+    this.scorer.difficulty = difficulty;
+    this.state.set({ difficulty });
   }
 
   setCorrection(ms: number) {

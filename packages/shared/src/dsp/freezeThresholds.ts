@@ -6,55 +6,55 @@
 import type { FreezeThresholds } from './freeze';
 
 export const FREEZE_THRESHOLDS: Record<'ankle' | 'thigh' | 'trunk', FreezeThresholds> = {
-  "ankle": {
-    "fi": 1.075,
-    "power": 1.3087
+  ankle: {
+    fi: 1.075,
+    power: 1.3087,
   },
-  "thigh": {
-    "fi": 0.896,
-    "power": 0.545
+  thigh: {
+    fi: 0.896,
+    power: 0.545,
   },
-  "trunk": {
-    "fi": 1.548,
-    "power": 1.0662
-  }
+  trunk: {
+    fi: 1.548,
+    power: 1.0662,
+  },
 };
 
 export const DAPHNET_RESULTS = {
-  "episodes": 237,
-  "subjects": 10,
-  "hours": 4.95,
-  "ankle": {
-    "windowSensitivity": 0.857,
-    "windowSpecificity": 0.766,
-    "eventsDetected": 233,
-    "events": 237,
-    "eventDetectionRate": 0.983,
-    "medianLatencyS": -1.6,
-    "falseAlarms": 568,
-    "falseAlarmsPerHour": 114.7,
-    "hours": 4.95
+  episodes: 237,
+  subjects: 10,
+  hours: 4.95,
+  ankle: {
+    windowSensitivity: 0.857,
+    windowSpecificity: 0.766,
+    eventsDetected: 233,
+    events: 237,
+    eventDetectionRate: 0.983,
+    medianLatencyS: -1.6,
+    falseAlarms: 568,
+    falseAlarmsPerHour: 114.7,
+    hours: 4.95,
   },
-  "thigh": {
-    "windowSensitivity": 0.842,
-    "windowSpecificity": 0.692,
-    "eventsDetected": 226,
-    "events": 237,
-    "eventDetectionRate": 0.954,
-    "medianLatencyS": -1.5,
-    "falseAlarms": 727,
-    "falseAlarmsPerHour": 146.8,
-    "hours": 4.95
+  thigh: {
+    windowSensitivity: 0.842,
+    windowSpecificity: 0.692,
+    eventsDetected: 226,
+    events: 237,
+    eventDetectionRate: 0.954,
+    medianLatencyS: -1.5,
+    falseAlarms: 727,
+    falseAlarmsPerHour: 146.8,
+    hours: 4.95,
   },
-  "trunk": {
-    "windowSensitivity": 0.799,
-    "windowSpecificity": 0.682,
-    "eventsDetected": 230,
-    "events": 237,
-    "eventDetectionRate": 0.97,
-    "medianLatencyS": -1.6,
-    "falseAlarms": 657,
-    "falseAlarmsPerHour": 132.7,
-    "hours": 4.95
-  }
+  trunk: {
+    windowSensitivity: 0.799,
+    windowSpecificity: 0.682,
+    eventsDetected: 230,
+    events: 237,
+    eventDetectionRate: 0.97,
+    medianLatencyS: -1.6,
+    falseAlarms: 657,
+    falseAlarmsPerHour: 132.7,
+    hours: 4.95,
+  },
 };

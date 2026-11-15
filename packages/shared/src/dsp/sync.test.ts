@@ -94,3 +94,38 @@ test('score fades when steps stop', () => {
   for (let t = last + 250; t < last + 6500; t += 250) s.tick(t, 250);
   assert.ok(s.score < before * 0.3, `${before} -> ${s.score}`);
 });
+
+test('easy mode: a pocket walker whose two legs land at different moments still scores well', async () => {
+  const { syncStats } = await import('./sync');
+  // 100 BPM; one leg lands 60 ms late, the other 60 ms early, with a little jitter.
+  const period = 600;
+  const phases: number[] = [];
+  const times: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    const off = (i % 2 ? -60 : 60) + (i % 3) * 8;
+    phases.push(off / period);
+    times.push(i * period + off);
+  }
+  const normal = syncStats(phases, times, 100, 'normal')!;
+  const easy = syncStats(phases, times, 100, 'easy')!;
+  assert.ok(
+    easy.raw > normal.raw + 0.1,
+    `easy ${easy.raw.toFixed(2)} vs normal ${normal.raw.toFixed(2)}`,
+  );
+  assert.ok(easy.raw > 0.85, `easy ${easy.raw.toFixed(2)}`);
+});
+
+test('easy mode still gives a low score to steps that ignore the beat', async () => {
+  const { syncStats } = await import('./sync');
+  // Walking at 80 steps/min against a 100 BPM beat: phases drift all the way round.
+  const phases: number[] = [];
+  const times: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    const t = i * 750;
+    times.push(t);
+    const p = (t / 600) % 1;
+    phases.push(p > 0.5 ? p - 1 : p);
+  }
+  const easy = syncStats(phases, times, 100, 'easy')!;
+  assert.ok(easy.raw < 0.35, `easy ${easy.raw.toFixed(2)}`);
+});
