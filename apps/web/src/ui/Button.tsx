@@ -1,5 +1,6 @@
 import { useRef, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 import './ui.css';
+import { buzz } from '../shared/haptic';
 
 /** Ignore repeat taps within this window, so a tremor cannot trigger an action twice. */
 export const TAP_DEBOUNCE_MS = 600;
@@ -23,7 +24,7 @@ export function Button({ variant = 'primary', hero, className = '', onClick, ...
     const now = performance.now();
     if (now - lastTap.current < TAP_DEBOUNCE_MS) return;
     lastTap.current = now;
-    if ('vibrate' in navigator) navigator.vibrate?.(10);
+    buzz(10);
     onClick?.(e);
   }
 

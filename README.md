@@ -28,7 +28,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 4     | Calibration + steady beat            | Done                           |
 | 5     | Sync scoring                         | Done                           |
 | 6     | Adaptive arrangement                 | Done (listening check pending) |
-| 7     | Visual score + patient screens       |                                |
+| 7     | Visual score + patient screens       | Done                           |
 | 8     | Freeze detection + Daphnet           |                                |
 | 9     | Demo hardening                       |                                |
 | 10    | Submission materials                 |                                |
@@ -141,6 +141,28 @@ docs/                research notes, HTTPS setup, demo script, pitch
   strips back to the pulse alone within 4 bars (~10 s); locking back in rebuilds one layer per
   bar to the full arrangement.
 - **Debug panel:** press **D** on the Studio to fake the score or force any layer on/off.
+
+## The two screens
+
+**Laptop Studio (for judges).** The main area is a **visual score** drawn from the music itself:
+each layer is a lane that appears only while it plays and is drawn from the actual notes
+(melody and keys as flowing lines, bass as a stepped line, shakers as dots, sparkle as
+twinkles), above a steps lane where the beat is shown as marigold bars and each step as a dot
+placed by its timing. Beside it: the in-step percentage in plain words, pace, beat, layers and
+freeze watch. **Under the hood** (button or **H**) opens the technical view: raw phone signal,
+the phase circle and R, clock sync and latency, how the phone counts, and music debug.
+
+**Phone (the patient app).** Welcome (3 cards, first run) → Home → Step 1 _Let's find your
+pace_ (spoken 3-2-1 count-in, 20 s ring, chime) → Step 2 _Your beat is ready_ (a circle that
+pulses exactly on the laptop's beat, using the clock sync) → **Walking** (dark, the whole
+screen is a press-and-hold stop target; taps and pocket bumps are ignored) → _End your walk?_
+→ **After the walk** (the walk drawn as music on five staff lines, plain-words summary,
+_Hear my walk_, _Send to physio_) plus **My walks** and **Settings** (beat offset, voice
+guidance, text size, hold-to-stop time). Every screen has a read-aloud button; buttons are 84
+to 128 px, debounced against tremor; no swipes or small targets; reduced motion respected.
+The hidden **developer screen** (tap the version in Settings 5 times) keeps the signal graph,
+step tuning and walk recording. The phone drives the laptop (find my pace, start/stop, a bit
+faster/slower) and the laptop reports back the phase, beat, score and layers.
 
 ## Clock sync (phone ↔ laptop)
 

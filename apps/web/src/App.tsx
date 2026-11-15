@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Landing } from './landing/Landing';
-import { SensorPage } from './sensor/SensorPage';
+import { PatientApp } from './patient/PatientApp';
 
 // The Studio (with Tone.js, ~300 KB) loads only on the laptop; the phone never downloads it.
 const StudioPage = lazy(() =>
@@ -14,7 +14,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/sensor" element={<SensorPage />} />
+        <Route path="/sensor" element={<PatientApp />} />
         <Route
           path="/studio"
           element={

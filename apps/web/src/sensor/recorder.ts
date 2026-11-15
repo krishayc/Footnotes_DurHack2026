@@ -6,6 +6,7 @@
 import { Store } from '../shared/store';
 import { motion } from './motion';
 import { steps } from './steps';
+import { buzz } from '../shared/haptic';
 
 export const RECORD_MS = 30_000;
 
@@ -51,7 +52,7 @@ class Recorder {
 
   private async finish() {
     this.cleanups.forEach((f) => f());
-    if ('vibrate' in navigator) navigator.vibrate?.([60, 80, 60]);
+    buzz([60, 80, 60]);
     this.state.set({ status: 'sending' });
     const snap = steps.getSnapshot();
     try {

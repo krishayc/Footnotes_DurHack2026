@@ -564,3 +564,56 @@
   font-size: 14px;
   padding: 2px 8px;
 }
+
+/* ---------- Stage 7: the score + Under the hood ---------- */
+.score {
+  display: block;
+  width: 100%;
+  height: clamp(360px, 66vh, 760px);
+  border-radius: var(--r-card);
+  border: 2px solid var(--d-border);
+}
+.legend-line--gold {
+  background: var(--c-highlight);
+}
+.studio__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+.modebar__btn--hood {
+  border-color: var(--c-highlight);
+  color: var(--c-highlight);
+}
+.hood {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  background: rgba(15, 25, 22, 0.97);
+  padding: var(--s-6) var(--s-7) var(--s-9);
+  animation: fade-in var(--t-med) var(--ease) both;
+}
+.hood__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--s-5);
+}
+.hood__head h2 {
+  font-size: 32px;
+}
+.hood__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--s-5);
+  align-items: start;
+}
+.hood__wide {
+  grid-column: 1 / -1;
+}
+.hood__lane .lane {
+  height: 260px;
+}

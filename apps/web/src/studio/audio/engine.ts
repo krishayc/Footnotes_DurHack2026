@@ -30,6 +30,17 @@ export interface Beat {
   beatInBar: number;
 }
 
+/** A note played by a music layer, for the visual score (performance.now() times). */
+export interface ScoreNote {
+  layer: number; // 0 Shakers, 1 Bass, 2 Keys, 3 Melody, 4 Sparkle
+  midi: number;
+  t: number;
+  durMs: number;
+  vel: number;
+  /** Was the layer audible (faded in)? Silent notes are not drawn. */
+  audible: boolean;
+}
+
 export interface AudioState {
   status: 'off' | 'starting' | 'on' | 'blocked';
   playing: boolean;
@@ -49,6 +60,8 @@ class AudioEngine {
   });
   /** Recent and just-scheduled beats, oldest first. */
   readonly beats: Beat[] = [];
+  /** Recent notes from the music layers, oldest first (for the visual score). */
+  readonly notes: ScoreNote[] = [];
   private beatListeners = new Set<(b: Beat) => void>();
   private built = false;
   private master!: Tone.Volume;
@@ -150,7 +163,17 @@ class AudioEngine {
     const comp = new Tone.Compressor({ threshold: -18, ratio: 3, attack: 0.01, release: 0.2 });
     this.master = new Tone.Volume(this.state.get().volumeDb);
     this.master.chain(comp, limiter);
-    this.band = createBand(this.master);
+    this.band = createBand(this.master, (layer, midi, time, durSec, vel, audible) => {
+      this.notes.push({
+        layer,
+        midi,
+        t: this.audioToPerf(time),
+        durMs: durSec * 1000,
+        vel,
+        audible,
+      });
+      if (this.notes.length > 3000) this.notes.splice(0, 500);
+    });
     this.built = true;
   }
 

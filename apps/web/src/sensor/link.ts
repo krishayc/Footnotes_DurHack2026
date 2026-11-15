@@ -13,6 +13,21 @@ import { RoomConnection, type LinkSnapshot } from '../shared/connection';
 import { motion } from './motion';
 import { steps } from './steps';
 import { wakeLock } from './wakeLock';
+import { Store } from '../shared/store';
+import type { WalkCommandMsg, WalkStateMsg } from '@footnotes/shared';
+
+/** The latest walk state from the laptop (null until the Studio has sent one). */
+export const walk = new Store<{ state: Omit<WalkStateMsg, 'type'> | null; receivedAt: number }>({
+  state: null,
+  receivedAt: 0,
+});
+
+let activeLink: SensorLink | null = null;
+
+/** Ask the laptop to do something (find my pace, start the beat...). False if not linked. */
+export function sendWalkCommand(action: WalkCommandMsg['action'], value?: number): boolean {
+  return activeLink?.conn.send({ type: 'walkCommand', action, value }) ?? false;
+}
 
 const BATCH_MS = 150;
 const STATUS_MS = 2000;
@@ -29,6 +44,9 @@ class SensorLink {
   }
 
   start() {
+    // The one live link, so screens can send walk commands without passing it around.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    activeLink = this;
     this.conn.start();
 
     this.cleanups.push(
@@ -37,6 +55,10 @@ class SensorLink {
           this.conn.send({ type: 'pong', id: msg.id, t0: msg.t0, t1: performance.now() });
         } else if (msg.type === 'peer' && msg.connected) {
           this.sendStatus();
+        } else if (msg.type === 'walkState') {
+          const { type: _t, ...state } = msg;
+          void _t;
+          walk.set({ state, receivedAt: performance.now() });
         } else if (msg.type === 'setLegMode') {
           steps.updateSettings({ legMode: msg.legMode });
           steps.resetCount();
@@ -75,6 +97,7 @@ class SensorLink {
   }
 
   stop() {
+    if (activeLink === this) activeLink = null;
     for (const fn of this.cleanups) fn();
     this.cleanups = [];
     this.conn.stop();

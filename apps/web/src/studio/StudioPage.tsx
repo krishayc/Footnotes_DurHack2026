@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
-import { makeRoomCode } from '@footnotes/shared';
+import { useCallback, useEffect, useState } from 'react';
+import { LAYER_COUNT, makeRoomCode } from '@footnotes/shared';
 import { LogoMark } from '../ui/Logo';
 import { JoinCard } from './JoinCard';
-import { LiveLane } from './LiveLane';
 import { useStudioLink, type StudioLinkSnapshot } from './link';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { ControlPanel } from './ControlPanel';
-import { SyncPanel } from './SyncPanel';
-import { PhoneCounting } from './PhoneCounting';
+import { InStepCard } from './SyncPanel';
 import { LayersPanel, MusicDebug } from './LayersPanel';
 import { arranger } from './music/arranger';
 import { ModeBar, SimControls, TapPad } from './ModeBar';
@@ -16,6 +14,9 @@ import { session } from './session';
 import { sync } from './sync';
 import { stepBus } from './steps';
 import { useStudioStats } from './useStudioStats';
+import { UnderTheHood } from './UnderTheHood';
+import { VisualScore } from './VisualScore';
+import { startWalkBridge } from './walkBridge';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -36,9 +37,9 @@ function useRoomCode(): string {
 }
 
 /**
- * The laptop Studio (for judges). Stage 4: sound, calibration, the steady beat, and the
- * three step sources (live phone, tap mode, simulated walker).
- * Later stages add sync scoring, the adaptive music, the visual score and Under the hood.
+ * The laptop Studio (for judges). Main area: the visual score. Side: what's happening in
+ * plain words (in step %, pace, beat, layers, freeze watch) and the controls. Bottom: where
+ * the steps come from, and "Under the hood" for the technical detail.
  */
 export function StudioPage() {
   const room = useRoomCode();
@@ -46,21 +47,34 @@ export function StudioPage() {
   const { mode } = useStore(stepBus.settings);
   const sess = useStore(session.state);
   const a = useStore(audio.state);
+  const arr = useStore(arranger.state);
   const stats = useStudioStats();
   const [debug, setDebug] = useState(false);
+  const [hood, setHood] = useState(false);
+  const closeHood = useCallback(() => setHood(false), []);
 
-  // Press D (outside text fields) to open the hidden music debug panel.
+  // Press D (outside text fields) for the hidden music debug panel; H for Under the hood.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'd' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if ((e.target as HTMLElement).closest('input, textarea')) return;
-      setDebug((d) => !d);
+      const k = e.key.toLowerCase();
+      if (k === 'd') setDebug((d) => !d);
+      if (k === 'h') setHood((v) => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => stepBus.attachLink(link), [link]);
+  useEffect(() => {
+    session.attachLink(link);
+    const stopBridge = startWalkBridge(link);
+    return () => {
+      session.attachLink(null);
+      stopBridge();
+    };
+  }, [link]);
   useEffect(() => {
     // Dev only: poke at the engine from the browser console (window.__fn).
     if (import.meta.env.DEV)
@@ -76,10 +90,6 @@ export function StudioPage() {
         },
       });
   }, [link]);
-  useEffect(() => {
-    session.attachLink(link);
-    return () => session.attachLink(null);
-  }, [link]);
 
   useEffect(() => {
     document.documentElement.style.background = 'var(--d-bg-0)';
@@ -90,6 +100,7 @@ export function StudioPage() {
 
   const phoneHere = snap.status === 'connected' && snap.peerConnected;
   const live = mode === 'live';
+  const layerCount = a.playing ? arr.on.filter(Boolean).length + 1 : 0;
 
   return (
     <div className="theme-dark studio">
@@ -102,7 +113,7 @@ export function StudioPage() {
           <span className="pill studio__pill">Studio</span>
         </div>
         <div className="studio__right">
-          <ConnectionStatus snap={snap} />
+          <ConnectionStatus snap={live ? snap : null} mode={mode} />
           <span>
             Room <span className="studio__code">{room}</span>
           </span>
@@ -110,38 +121,26 @@ export function StudioPage() {
       </header>
 
       <main className="studio__body">
-        <section className="studio__stage" aria-label="The beat and the steps">
-          <h2 className="studio__h">The beat and the steps, live</h2>
-          <LiveLane link={link} />
+        <section className="studio__stage" aria-label="The score, live">
+          <h2 className="studio__h">The score, live</h2>
+          <VisualScore />
           <p className="studio__legend">
-            <span className="legend-bar" aria-hidden="true" /> a beat (always steady)
+            <span className="legend-bar" aria-hidden="true" /> the beat
             <span className="legend-dot legend-dot--on" aria-hidden="true" /> step on time
             <span className="legend-dot legend-dot--near" aria-hidden="true" /> a bit early or late
             <span className="legend-dot legend-dot--off" aria-hidden="true" /> off the beat
-            {live && (
-              <>
-                <span className="legend-line" aria-hidden="true" /> movement felt by the phone
-              </>
-            )}
+            <span className="legend-line legend-line--gold" aria-hidden="true" /> music layers
+            appear as they start playing
           </p>
         </section>
 
         <aside className="studio__side">
           {debug && <MusicDebug onClose={() => setDebug(false)} />}
-          {/* Until the beat plays, the next thing to do (sound, pace, start) comes first.
-              Once it plays, the live score and layers move to the top. */}
           {!a.playing && <ControlPanel />}
-          <SyncPanel />
-          <LayersPanel />
-          {a.playing && <ControlPanel />}
-          {mode === 'tap' && <TapPad />}
-          {mode === 'sim' && <SimControls />}
-          {live && !phoneHere && <JoinCard room={room} />}
-          {live && phoneHere && <PhoneCounting link={link} snap={snap} />}
-
+          <InStepCard />
           <div className="tiles">
             <Tile
-              label="Their pace now"
+              label="Their pace"
               value={stats.paceSpm ? Math.round(stats.paceSpm) : '-'}
               unit="steps/min"
             />
@@ -149,71 +148,59 @@ export function StudioPage() {
               label="The beat"
               value={sess.phase === 'ready' ? sess.tempo : '-'}
               unit="BPM"
-              hint={a.playing ? 'playing' : sess.phase === 'ready' ? 'ready' : 'not set yet'}
+              hint={
+                sess.phase !== 'ready'
+                  ? 'not set yet'
+                  : sess.manual
+                    ? 'set by hand'
+                    : `+${Math.round(sess.offset * 100)}% on their pace`
+              }
             />
             <Tile
-              label="Beat steadiness"
-              value={stats.beatSpreadMs !== null ? stats.beatSpreadMs.toFixed(2) : '-'}
-              unit="ms"
-              hint="spread of beat gaps"
+              label="Layers"
+              value={a.playing ? `${layerCount} of ${LAYER_COUNT + 1}` : '-'}
+              hint={a.playing ? 'beat + music' : 'silent'}
             />
-            <Tile label="Steps" value={stepBus.total || '-'} hint="since the page opened" />
-            {live && (
-              <>
-                <Tile
-                  label="Round trip"
-                  value={snap.lastRtt !== null ? Math.round(snap.lastRtt) : '-'}
-                  unit="ms"
-                  hint={snap.clock ? `best ${Math.round(snap.clock.rtt)} ms` : undefined}
-                />
-                <Tile
-                  label="Step arrives after"
-                  value={snap.stepLatencyMs !== null ? Math.round(snap.stepLatencyMs) : '-'}
-                  unit="ms"
-                  hint="detection + network"
-                />
-                <Tile
-                  label="Clock offset"
-                  value={snap.clock ? (snap.clock.offset / 1000).toFixed(3) : '-'}
-                  unit="s"
-                  hint={
-                    snap.clock ? `± ${Math.round(snap.clock.uncertainty)} ms` : 'phone − laptop'
-                  }
-                />
-                <Tile
-                  label="Phone sensor"
-                  value={snap.phone?.rateHz ? Math.round(snap.phone.rateHz) : '-'}
-                  unit="Hz"
-                  hint={
-                    snap.phone
-                      ? snap.phone.motion !== 'granted'
-                        ? 'sensor not started yet'
-                        : snap.phone.oneLeg
-                          ? 'counting each bump as 2 steps (one leg)'
-                          : snap.phone.wakeLock
-                            ? 'on, screen kept awake'
-                            : 'on, screen may sleep'
-                      : undefined
-                  }
-                />
-              </>
-            )}
+            <Tile label="Freeze watch" value="Clear" hint="freeze detection: Stage 8" />
           </div>
-          {live && phoneHere && <JoinCard room={room} compact />}
+          <LayersPanel />
+          {a.playing && <ControlPanel />}
+          {mode === 'tap' && <TapPad />}
+          {mode === 'sim' && <SimControls />}
+          {live && <JoinCard room={room} compact={phoneHere} />}
         </aside>
       </main>
 
       <footer className="studio__footer">
         <ModeBar />
+        <button
+          type="button"
+          className="modebar__btn modebar__btn--hood"
+          aria-pressed={hood}
+          onClick={() => setHood(true)}
+        >
+          Under the hood
+        </button>
       </footer>
+
+      {hood && <UnderTheHood link={link} snap={snap} stats={stats} onClose={closeHood} />}
     </div>
   );
 }
 
-function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
+function ConnectionStatus({
+  snap,
+  mode,
+}: {
+  snap: StudioLinkSnapshot | null;
+  mode: 'live' | 'tap' | 'sim';
+}) {
   let text: string;
   let color: string;
-  if (snap.status === 'reconnecting' || snap.status === 'connecting') {
+  if (!snap) {
+    text = mode === 'tap' ? 'Tap mode: no phone needed' : 'Simulated walker: no phone needed';
+    color = 'var(--c-highlight)';
+  } else if (snap.status === 'reconnecting' || snap.status === 'connecting') {
     text =
       snap.status === 'connecting'
         ? 'Connecting...'
@@ -237,7 +224,7 @@ function ConnectionStatus({ snap }: { snap: StudioLinkSnapshot }) {
     color = 'var(--d-on-time)';
   }
   return (
-    <span className="studio__status" role="status" title={snap.url}>
+    <span className="studio__status" role="status" title={snap?.url}>
       <span className="dot" style={{ color }} aria-hidden="true" />
       {text}
     </span>

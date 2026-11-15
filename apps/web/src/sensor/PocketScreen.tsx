@@ -14,6 +14,7 @@ import { useSteps } from './steps';
 import { useWakeLock } from './wakeLock';
 import { useStore } from '../shared/store';
 import { RECORD_MS, recorder } from './recorder';
+import { buzz } from '../shared/haptic';
 
 const HOLD_MS = 2000;
 
@@ -52,7 +53,7 @@ export function PocketScreen({
       setHold(p);
       if (p >= 1) {
         holdStart.current = null;
-        if ('vibrate' in navigator) navigator.vibrate?.(30);
+        buzz(30);
         onExit();
         return;
       }

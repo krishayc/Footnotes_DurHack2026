@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Wordmark } from '../ui/Logo';
 import { IconPlay } from '../ui/icons';
@@ -9,7 +8,6 @@ import { useWakeLock, wakeLock } from './wakeLock';
 import { RAW_SERIES, STEP_SERIES, SignalGraph, type GraphMode } from './SignalGraph';
 import { StepTest, TuningPanel } from './StepTools';
 import { useSteps } from './steps';
-import { useSensorLink } from './link';
 import { PocketScreen } from './PocketScreen';
 import type { LinkSnapshot } from '../shared/connection';
 import { Link } from 'react-router-dom';
@@ -26,15 +24,24 @@ const isIOS =
  * In Stage 7 this becomes the hidden "Developer" screen and the patient flow (Home, Step 1,
  * Walking, ...) takes over the /sensor route.
  */
-export function SensorPage() {
-  const [params] = useSearchParams();
-  const room = params.get('room');
+/**
+ * Developer screen (hidden: tap the version number in Settings 5 times). The live signal
+ * graph, step detection tuning, the 40-step test and walk recording. Patients never see it.
+ */
+export function SensorPage({
+  room,
+  link,
+  onBack,
+}: {
+  room: string | null;
+  link: LinkSnapshot | null;
+  onBack: () => void;
+}) {
   const m = useMotion();
   const wake = useWakeLock();
-  const link = useSensorLink(room);
   const [graph, setGraph] = useState<GraphMode>('steps');
   // Pocket mode is on by default once the sensor runs, so pocket bumps can't press anything.
-  const [pocket, setPocket] = useState(true);
+  const [pocket, setPocket] = useState(false);
 
   const active = m.state === 'running' || m.state === 'waiting' || m.state === 'requesting';
 
@@ -56,6 +63,9 @@ export function SensorPage() {
   return (
     <main className="sensor fade-in">
       <div className="sensor__top">
+        <Button variant="secondary" onClick={onBack} className="sensor__back">
+          Back to the app
+        </Button>
         <Wordmark size={36} />
         {room && <span className="pill sensor__room">Room {room}</span>}
       </div>

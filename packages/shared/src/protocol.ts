@@ -132,8 +132,42 @@ export interface SetLegModeMsg {
   legMode: 'both' | 'one' | 'auto';
 }
 
+/** Phone -> Studio: the patient app asks the laptop to do something. */
+export interface WalkCommandMsg {
+  type: 'walkCommand';
+  action: 'calibrate' | 'cancelCalibration' | 'startBeat' | 'stopBeat' | 'nudge' | 'setOffset';
+  /** nudge: BPM change (e.g. ±2). setOffset: fraction (e.g. 0.05). */
+  value?: number;
+}
+
+/**
+ * Studio -> phone: what the walk looks like right now (sent on every change and once a
+ * second). The phone's patient screens are drawn from this.
+ */
+export interface WalkStateMsg {
+  type: 'walkState';
+  phase: 'idle' | 'calibrating' | 'ready' | 'walking';
+  /** Has someone clicked Start audio on the laptop? */
+  audioOn: boolean;
+  calLeftMs: number | null;
+  calSteps: number;
+  calNotes: string[];
+  baseline: number | null;
+  tempo: number;
+  offset: number;
+  /** Smoothed in-step score 0..1. */
+  score: number;
+  layersOn: string[];
+  nextLayer: string | null;
+  /** A recent beat, in the PHONE's clock (so the phone can pulse exactly on the beat). */
+  beatPhoneT: number | null;
+  periodMs: number;
+}
+
 export type ClientMsg =
   | JoinMsg
+  | WalkCommandMsg
+  | WalkStateMsg
   | KeepaliveMsg
   | SetLegModeMsg
   | PingMsg
@@ -165,6 +199,8 @@ const KNOWN_TYPES = new Set<AnyMsg['type']>([
   'calibrationStart',
   'calibrationResult',
   'setLegMode',
+  'walkCommand',
+  'walkState',
 ]);
 
 /** Parse a raw WebSocket frame. Returns null for anything that is not a known message. */

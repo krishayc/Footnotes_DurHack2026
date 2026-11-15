@@ -13,12 +13,10 @@ export function scoreWords(score: number): string {
   return 'Not in step yet';
 }
 
-export function SyncPanel() {
+/** The headline: big "In step" percentage, words and a bar. */
+export function InStepCard() {
   const s = useStore(sync.state);
-  const st = s.stats;
   const pct = Math.round(s.score * 100);
-  const meanMs = st ? st.meanPhase * s.periodMs : null;
-
   return (
     <section className="panel sync" aria-labelledby="sync-h">
       <div className="sync__top">
@@ -45,7 +43,20 @@ export function SyncPanel() {
       >
         <span style={{ width: `${s.active ? pct : 0}%` }} />
       </div>
+    </section>
+  );
+}
 
+/** The maths behind the score (Under the hood): phase circle, R, timing, tempo match. */
+export function SyncDetails() {
+  const s = useStore(sync.state);
+  const st = s.stats;
+  const meanMs = st ? st.meanPhase * s.periodMs : null;
+  return (
+    <section className="panel" aria-labelledby="syncd-h">
+      <h2 id="syncd-h" className="panel__h">
+        Timing maths
+      </h2>
       <div className="sync__detail">
         <PhaseCircle />
         <dl className="sync__nums">
@@ -67,9 +78,16 @@ export function SyncPanel() {
             <dt>Pace vs beat</dt>
             <dd>{st?.tempoRatio ? `${Math.round(st.tempoRatio * 100)}%` : '-'}</dd>
           </div>
+          <div>
+            <dt>Raw score (before smoothing)</dt>
+            <dd>{st ? `${Math.round(st.raw * 100)}%` : '-'}</dd>
+          </div>
         </dl>
       </div>
-
+      <p className="panel__p panel__p--sm">
+        Each step is a point on a clock face where 12 o&apos;clock is the beat. R is the length of
+        the average arrow: 1 = every step lands at the same moment, 0 = all over the place.
+      </p>
       <div className="slider slider--dark">
         <label htmlFor="corr">
           Timing correction <output htmlFor="corr">{s.correctionMs} ms</output>

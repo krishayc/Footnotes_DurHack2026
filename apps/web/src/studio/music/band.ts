@@ -55,7 +55,20 @@ export const LEVELS = {
   sparkle: -17,
 };
 
-export function createBand(destination: Tone.InputNode): Band {
+/** Called for every note a layer plays (audio time), so the visual score can draw it. */
+export type NoteHook = (
+  layer: number,
+  midi: number,
+  time: number,
+  durSec: number,
+  vel: number,
+  audible: boolean,
+) => void;
+
+export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band {
+  /** Whether each layer is (being faded) on. */
+  const audible: boolean[] = Array(5).fill(false);
+  const midiOf = (note: string) => Tone.Frequency(note).toMidi();
   const nodes: { dispose(): unknown }[] = [];
   const keep = <T extends { dispose(): unknown }>(n: T) => (nodes.push(n), n);
 
@@ -91,6 +104,7 @@ export function createBand(destination: Tone.InputNode): Band {
 
   /** Play a bar's worth of note events that fall on this slot. */
   const playEvents = (
+    layer: number,
     events: NoteEvent[],
     slot: number,
     slotSec: number,
@@ -98,9 +112,12 @@ export function createBand(destination: Tone.InputNode): Band {
     trigger: (note: string, dur: number, t: number, vel: number) => void,
   ) => {
     for (const [s, note, len, vel] of events) {
+      if (s !== slot) continue;
       // Tiny velocity variation so repeated notes sound played, not stamped.
-      if (s === slot)
-        trigger(note, len * slotSec * 0.95, time, vel * (0.93 + Math.random() * 0.07));
+      const v = vel * (0.93 + Math.random() * 0.07);
+      const dur = len * slotSec * 0.95;
+      trigger(note, dur, time, v);
+      onNote?.(layer, midiOf(note), time, dur, v, audible[layer]);
     }
   };
 
@@ -202,15 +219,18 @@ export function createBand(destination: Tone.InputNode): Band {
       id: 1,
       name: LAYER_NAMES[0],
       fader: shakerFader,
-      play: (time, _bar, slot) =>
-        shaker.triggerAttackRelease('32n', time, SHAKER_VEL[slot] * (0.9 + Math.random() * 0.1)),
+      play: (time, _bar, slot, slotSec) => {
+        const v = SHAKER_VEL[slot] * (0.9 + Math.random() * 0.1);
+        shaker.triggerAttackRelease('32n', time, v);
+        onNote?.(0, 0, time, slotSec * 0.3, v, audible[0]);
+      },
     },
     {
       id: 2,
       name: LAYER_NAMES[1],
       fader: bassFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(bassBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
+        playEvents(1, bassBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
           bass.triggerAttackRelease(n, d, t, v),
         ),
     },
@@ -219,7 +239,7 @@ export function createBand(destination: Tone.InputNode): Band {
       name: LAYER_NAMES[2],
       fader: keysFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(keysBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
+        playEvents(2, keysBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
           keys.triggerAttackRelease(n, d, t, v),
         ),
     },
@@ -228,7 +248,7 @@ export function createBand(destination: Tone.InputNode): Band {
       name: LAYER_NAMES[3],
       fader: melodyFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(melodyBar(bar), slot, slotSec, time, (n, d, t, v) =>
+        playEvents(3, melodyBar(bar), slot, slotSec, time, (n, d, t, v) =>
           melody.triggerAttackRelease(n, d, t, v),
         ),
     },
@@ -237,7 +257,7 @@ export function createBand(destination: Tone.InputNode): Band {
       name: LAYER_NAMES[4],
       fader: sparkleFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(sparkleBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
+        playEvents(4, sparkleBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
           sparkle.triggerAttackRelease(n, d, t, v),
         ),
     },
@@ -250,6 +270,7 @@ export function createBand(destination: Tone.InputNode): Band {
     },
     layers,
     setLayer(index, on, time = Tone.now()) {
+      audible[index] = on;
       const g = layers[index].fader.gain;
       g.cancelScheduledValues(time);
       g.setValueAtTime(g.getValueAtTime(time), time);
