@@ -85,11 +85,14 @@ class StepBus {
         this.ignoredPhone.set({ at: performance.now() });
         return;
       }
-      // Clock sync gives the exact time; if it's missing or clearly off (just after the phone
-      // page reloaded), use the arrival time so the step still lands near "now" on screen.
+      // Clock sync gives the exact time. Steps the phone kept during a dropout arrive late
+      // but keep their real time. If the clock is missing or clearly wrong (a step from the
+      // future, or from long ago: just after the phone page reloaded), use the arrival time.
       const synced = link.toLocal(s.phoneT);
       const fallback = s.receivedAt - FALLBACK_LATENCY_MS;
-      const t = synced !== null && Math.abs(synced - fallback) < 3000 ? synced : fallback;
+      const plausible =
+        synced !== null && synced <= s.receivedAt + 1000 && synced >= s.receivedAt - 60_000;
+      const t = plausible ? synced : fallback;
       this.emit({ t, inferred: s.inferred, source: 'live' });
     });
     return () => {

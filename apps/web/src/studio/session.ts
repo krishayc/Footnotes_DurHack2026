@@ -30,6 +30,8 @@ export interface SessionState {
   phase: Phase;
   calStartedAt: number | null;
   calStepCount: number;
+  /** The 20 s are up but the phone went quiet: waiting a little for its steps. */
+  calWaiting: boolean;
   result: CalibrationResult | null;
   /** Baseline pace, steps per minute (from calibration or chosen manually). */
   baseline: number | null;
@@ -72,6 +74,7 @@ class Session {
     phase: live?.ready ? 'ready' : 'idle',
     calStartedAt: null,
     calStepCount: 0,
+    calWaiting: false,
     result: null,
     baseline: live?.baseline ?? null,
     offset: saved.offset,
@@ -114,6 +117,8 @@ class Session {
   }
   private calSteps: number[] = [];
   private calTimer: number | undefined;
+  /** When (ms into the wait) the phone came back. */
+  private backAt: number | null = null;
   private unsubStep: (() => void) | null = null;
   private link: StudioLink | null = null;
 
@@ -130,16 +135,17 @@ class Session {
       phase: 'calibrating',
       calStartedAt: startedAt,
       calStepCount: 0,
+      calWaiting: false,
       result: null,
     });
     this.link?.conn.send({ type: 'calibrationStart', durationMs: CALIBRATION_MS });
 
     this.unsubStep = stepBus.onStep((s) => {
-      if (s.t < startedAt) return;
+      if (s.t < startedAt || s.t > startedAt + CALIBRATION_MS) return;
       this.calSteps.push(s.t);
       this.state.set({ calStepCount: this.calSteps.length });
     });
-    this.calTimer = window.setTimeout(() => this.finishCalibration(), CALIBRATION_MS);
+    this.calTimer = window.setTimeout(() => this.finishCalibration(0, false), CALIBRATION_MS);
   }
 
   cancelCalibration() {
@@ -185,7 +191,29 @@ class Session {
     audio.stop();
   }
 
-  private finishCalibration() {
+  /**
+   * The 20 s are up. If the phone has gone quiet (connection blip, phone locked), wait up to
+   * 10 s for it to come back: it keeps the steps it couldn't send and sends them on
+   * reconnecting, so the measurement isn't wasted.
+   */
+  private finishCalibration(waitedMs: number, sawQuiet: boolean) {
+    const snap = this.link?.getSnapshot();
+    const quiet =
+      stepBus.settings.get().mode === 'live' &&
+      !!snap &&
+      (!snap.peerConnected || (snap.phoneSilentMs ?? Infinity) > 2000);
+    const backAgoMs = sawQuiet && !quiet ? waitedMs - (this.backAt ?? waitedMs) : 0;
+    if (waitedMs < 10_000 && (quiet || (sawQuiet && backAgoMs < 2500))) {
+      if (quiet) this.backAt = null;
+      else if (this.backAt === null) this.backAt = waitedMs;
+      if (!this.state.get().calWaiting) this.state.set({ calWaiting: true });
+      this.calTimer = window.setTimeout(
+        () => this.finishCalibration(waitedMs + 250, sawQuiet || quiet),
+        250,
+      );
+      return;
+    }
+    this.backAt = null;
     this.unsubStep?.();
     this.unsubStep = null;
     const { offset } = this.state.get();
@@ -193,6 +221,7 @@ class Session {
     this.state.set({
       phase: 'ready',
       calStartedAt: null,
+      calWaiting: false,
       result,
       baseline: result.cadenceSpm,
       tempo: result.tempoBpm,

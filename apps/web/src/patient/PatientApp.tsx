@@ -53,7 +53,7 @@ export function PatientApp() {
     case 'step2':
       return <Step2 go={go} />;
     case 'walking':
-      return <Walking go={go} />;
+      return <Walking go={go} link={link} />;
     case 'end':
       return <EndConfirm go={go} />;
     case 'after':

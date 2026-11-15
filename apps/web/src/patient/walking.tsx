@@ -15,7 +15,8 @@ import {
   type Walk,
 } from './history';
 import { prefs } from './prefs';
-import { BeatPulse, useStartBeatOnce, type Go } from './setup';
+import { BeatPulse, linkProblem, useStartBeatOnce, type Go } from './setup';
+import type { LinkSnapshot } from '../shared/connection';
 import { StaffPicture } from './StaffPicture';
 import { Screen, SpeakButton } from './ui';
 import { chime, playNotes, speak } from './voice';
@@ -27,7 +28,7 @@ const DIM_AFTER_MS = 90_000;
 
 // ---------------------------------------------------------------- Walking
 
-export function Walking({ go }: { go: Go }) {
+export function Walking({ go, link }: { go: Go; link: LinkSnapshot | null }) {
   const { state: st } = useStore(walk);
   const p = useStore(prefs);
   const s = useSteps();
@@ -84,17 +85,20 @@ export function Walking({ go }: { go: Go }) {
   const mins = Math.floor(walkSeconds() / 60);
   const paused = isPaused();
   const score = st?.score ?? 0;
-  const musicStopped = !!st && st.phase !== 'walking';
+  const lost = linkProblem(link) !== null;
+  const musicStopped = !lost && !!st && st.phase !== 'walking';
   const freezing = !musicStopped && !!st?.freezing;
-  const status = musicStopped
-    ? 'The music is stopped on the laptop'
-    : freezing
-      ? 'Take your time. Listen for the beat, then take a big step.'
-      : paused
-        ? 'Paused. The music will help you restart.'
-        : score >= 0.6
-          ? 'In step'
-          : 'Finding the beat';
+  const status = lost
+    ? 'Lost the laptop for a moment. Reconnecting...'
+    : musicStopped
+      ? 'The music is stopped on the laptop'
+      : freezing
+        ? 'Take your time. Listen for the beat, then take a big step.'
+        : paused
+          ? 'Paused. The music will help you restart.'
+          : score >= 0.6
+            ? 'In step'
+            : 'Finding the beat';
   // A freeze: one gentle buzz and a calm spoken prompt (if voice is on), once per freeze.
   const wasFreezing = useRef(false);
   useEffect(() => {

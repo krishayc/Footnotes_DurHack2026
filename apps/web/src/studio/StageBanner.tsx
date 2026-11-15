@@ -51,7 +51,9 @@ export function StageBanner() {
     kind = 'measure';
     label = 'Step 1 of 2 · Finding their pace';
     const left = CALIBRATION_MS - (now - (s.calStartedAt ?? now));
-    text = `${Math.max(0, Math.ceil(left / 1000))} s left · ${s.calStepCount} steps · no music yet`;
+    text = s.calWaiting
+      ? `${s.calStepCount} steps · the phone went quiet: waiting a few seconds for its steps`
+      : `${Math.max(0, Math.ceil(left / 1000))} s left · ${s.calStepCount} steps · no music yet`;
   } else if (s.phase === 'ready') {
     kind = 'waiting';
     label = !s.result
