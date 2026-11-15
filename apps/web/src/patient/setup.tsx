@@ -366,8 +366,9 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
           <ScreenWarning />
           {!stuck && laptopCounting && linkProblem(link) && (
             <p className="pt__note pt__warn" role="status">
-              Lost the laptop for a moment. Keep walking: your steps are saved and will be sent when
-              it reconnects.
+              {link?.status === 'error'
+                ? linkProblem(link)
+                : 'Lost the laptop for a moment. Keep walking: your steps are saved and will be sent when it reconnects.'}
             </p>
           )}
           {stuck && (

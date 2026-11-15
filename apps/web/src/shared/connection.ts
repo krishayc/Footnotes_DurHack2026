@@ -47,6 +47,10 @@ export class RoomConnection {
   private liveness: number | undefined;
   /** When we last heard ANYTHING from the server (performance.now()). */
   private lastHeardAt = 0;
+  /** Times we took the room back after another page took our place (recent only). */
+  private takeovers: number[] = [];
+  /** A phone page that was hidden when it lost the room: rejoin when it's on screen again. */
+  private waitingForVisible = false;
   private snapshot: LinkSnapshot = {
     status: 'connecting',
     peerConnected: false,
@@ -157,8 +161,12 @@ export class RoomConnection {
 
     ws.onclose = (ev) => {
       // 4000 = the server gave our place in the room to a newer connection (the same page
-      // opened in another tab or on another device). Reconnecting would just kick that one
-      // out in turn, forever, so stop and say so.
+      // opened in another tab or on another device).
+      if (ev.code === 4000 && this.ws === ws && this.role === 'sensor') {
+        this.onReplaced(ws);
+        return;
+      }
+      // The laptop: the newest Studio tab wins; this one stops and says so.
       if (ev.code === 4000 && this.ws === ws) {
         this.ws = null;
         this.closedByUs = true;
@@ -178,6 +186,40 @@ export class RoomConnection {
     };
   }
 
+  /**
+   * Another phone page took our place in the room. Every QR scan opens a new browser tab, so
+   * old Footnotes tabs can wake up in the background and do this. Rule: the page the person
+   * is LOOKING AT wins. On screen: take the room back in a second. Hidden: wait until it's on
+   * screen again (a hidden page can't count steps anyway). If two pages that are both on
+   * screen keep swapping, stop and say so instead of flapping forever.
+   */
+  private onReplaced(ws: WebSocket) {
+    this.ws = null;
+    window.clearTimeout(this.watchdog);
+    window.clearTimeout(this.retryTimer);
+    const now = performance.now();
+    this.takeovers = this.takeovers.filter((t) => now - t < 30_000);
+    if (this.takeovers.length >= 3) {
+      this.closedByUs = true;
+      window.clearInterval(this.liveness);
+      this.set({
+        status: 'error',
+        peerConnected: false,
+        error:
+          'Footnotes is open on another phone or in another tab. Close the others, then reload this page.',
+      });
+      return;
+    }
+    this.set({ status: 'reconnecting', peerConnected: false });
+    if (document.visibilityState !== 'visible') {
+      this.waitingForVisible = true;
+      return;
+    }
+    this.takeovers.push(now);
+    this.retryTimer = window.setTimeout(() => this.connect(), 1000);
+    void ws;
+  }
+
   /** A socket closed or got stuck: schedule a reconnect (once per socket). */
   private handleDrop(ws: WebSocket) {
     if (this.ws !== ws) return; // an old socket we already replaced
@@ -186,6 +228,12 @@ export class RoomConnection {
     if (this.closedByUs) return;
     if (this.snapshot.status !== 'error')
       this.set({ status: 'reconnecting', peerConnected: false });
+    // A hidden phone page can't sense steps: don't reconnect (and risk bumping the page the
+    // person is using) until it's on screen again.
+    if (this.role === 'sensor' && document.visibilityState !== 'visible') {
+      this.waitingForVisible = true;
+      return;
+    }
     window.clearTimeout(this.retryTimer);
     this.retryTimer = window.setTimeout(() => this.connect(), this.backoff);
     this.backoff = Math.min(MAX_BACKOFF_MS, this.backoff * 2);
@@ -216,6 +264,13 @@ export class RoomConnection {
   /** Coming back to the page (or back online): reconnect straight away if we need to. */
   private onVisible = () => {
     if (document.visibilityState !== 'visible' || this.closedByUs) return;
+    if (this.waitingForVisible) {
+      this.waitingForVisible = false;
+      window.clearTimeout(this.retryTimer);
+      this.backoff = 500;
+      this.connect();
+      return;
+    }
     const ws = this.ws;
     const stale = performance.now() - this.lastHeardAt > STALE_ON_RETURN_MS;
     if (!ws || ws.readyState === WebSocket.CLOSED || (ws.readyState === WebSocket.OPEN && stale)) {
