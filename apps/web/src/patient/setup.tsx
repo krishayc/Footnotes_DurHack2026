@@ -24,7 +24,8 @@ export function linkProblem(link: LinkSnapshot | null): string | null {
   if (link === null || !room)
     return 'Not connected to the music yet. Scan the code on the laptop with your camera.';
   if (link.status === 'error') return link.error ?? 'Connection problem. Reload this page.';
-  if (link.status !== 'connected') return 'Connecting to the laptop...';
+  if (link.status !== 'connected')
+    return `Connecting to the laptop...${link.attempts > 2 ? ` (try ${link.attempts}: check the laptop and the tunnel are still running)` : ''}`;
   if (!link.peerConnected)
     return `Waiting for the laptop in room ${room}. If the laptop shows a different room code, scan its code again.`;
   return null;
