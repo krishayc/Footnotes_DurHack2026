@@ -29,5 +29,10 @@ export default defineConfig({
       '/api': `http://127.0.0.1:${serverPort}`,
     },
   },
+  // Pre-bundle these up front. Otherwise Vite may discover one while the app is running,
+  // re-bundle, and force-refresh every open page (which would stop the Studio's music).
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-dom/client', 'react-router-dom', 'tone', 'qrcode'],
+  },
   build: { target: 'es2022', sourcemap: true },
 });

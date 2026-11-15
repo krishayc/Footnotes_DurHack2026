@@ -37,22 +37,81 @@ export interface SessionState {
   tempo: number;
   /** Tempo was nudged by hand after calibration. */
   manual: boolean;
+  /** The page was refreshed mid-walk: one click should bring the music back. */
+  resumePending: boolean;
 }
+
+/**
+ * Survive a page refresh: keep the walk (pace, beat, whether the beat was playing) in
+ * sessionStorage for this tab. Browsers won't let a refreshed page make sound until someone
+ * clicks, so after a refresh the Studio offers a single "click to bring the music back".
+ */
+const LIVE_KEY = 'footnotes.studio.live.v1';
+interface LiveSave {
+  ready: boolean;
+  baseline: number | null;
+  tempo: number;
+  manual: boolean;
+  playing: boolean;
+}
+function loadLive(): LiveSave | null {
+  try {
+    const raw = sessionStorage.getItem(LIVE_KEY);
+    return raw ? (JSON.parse(raw) as LiveSave) : null;
+  } catch {
+    return null;
+  }
+}
+const live = loadLive();
 
 const KEY = 'footnotes.studio.session.v1';
 const saved = loadJSON(KEY, { offset: DEFAULT_OFFSET });
 
 class Session {
   readonly state = new Store<SessionState>({
-    phase: 'idle',
+    phase: live?.ready ? 'ready' : 'idle',
     calStartedAt: null,
     calStepCount: 0,
     result: null,
-    baseline: null,
+    baseline: live?.baseline ?? null,
     offset: saved.offset,
-    tempo: 100,
-    manual: false,
+    tempo: live?.tempo ?? 100,
+    manual: live?.manual ?? false,
+    resumePending: !!live?.playing,
   });
+
+  constructor() {
+    const persist = () => {
+      const st = this.state.get();
+      const a = audio.state.get();
+      const save: LiveSave = {
+        ready: st.phase === 'ready',
+        baseline: st.baseline,
+        tempo: st.tempo,
+        manual: st.manual,
+        // Keep "was playing" while a resume is pending, so a second refresh still offers it.
+        playing: a.playing || st.resumePending,
+      };
+      try {
+        sessionStorage.setItem(LIVE_KEY, JSON.stringify(save));
+      } catch {
+        /* ignore */
+      }
+    };
+    this.state.subscribe(persist);
+    audio.state.subscribe(persist);
+  }
+
+  /** After a refresh: turn the sound back on and restart the beat (call from a click). */
+  async resume() {
+    await audio.start();
+    this.state.set({ resumePending: false });
+    if (this.state.get().phase === 'ready' && audio.state.get().status === 'on') this.startBeat();
+  }
+
+  dismissResume() {
+    this.state.set({ resumePending: false });
+  }
   private calSteps: number[] = [];
   private calTimer: number | undefined;
   private unsubStep: (() => void) | null = null;

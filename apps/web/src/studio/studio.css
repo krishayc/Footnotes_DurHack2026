@@ -617,3 +617,48 @@
 .hood__lane .lane {
   height: 260px;
 }
+
+/* A canvas sizes itself from its container; without min-width: 0 a grid column grows to fit
+   the canvas's own pixel width, which then grows again... and pushes the page off-screen. */
+.studio__stage,
+.studio__side {
+  min-width: 0;
+}
+.score,
+.lane {
+  max-width: 100%;
+}
+.resume {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  border: 0;
+  background: rgba(15, 25, 22, 0.92);
+  color: var(--d-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  padding: var(--s-7);
+}
+.resume__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--c-highlight);
+}
+.resume__sub {
+  font-size: 20px;
+  color: var(--d-muted);
+}
+.resume__skip {
+  margin-top: var(--s-5);
+  text-decoration: underline;
+  color: var(--d-muted);
+  font-size: 17px;
+  padding: var(--s-2) var(--s-4);
+}

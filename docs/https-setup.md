@@ -25,7 +25,8 @@ npm run dev          # terminal 1: relay server :8787 + Vite :5173
 npm run tunnel:dev   # terminal 2: prints https://<random>.trycloudflare.com
 ```
 
-**For the demo** (one built, fast, offline-capable bundle on one port):
+**For walking tests and the demo** (one built, fast, offline-capable bundle on one port; it
+never auto-refreshes, unlike dev mode, so the Studio's music can't be interrupted):
 
 ```bash
 npm run demo         # builds the web app and serves it from the relay server on :8787

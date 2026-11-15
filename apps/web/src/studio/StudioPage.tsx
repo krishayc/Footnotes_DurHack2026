@@ -183,6 +183,32 @@ export function StudioPage() {
         </button>
       </footer>
 
+      {sess.resumePending && a.status !== 'on' && (
+        <button type="button" className="resume" onClick={() => void session.resume()}>
+          <span className="resume__title">Click anywhere to bring the music back</span>
+          <span className="resume__sub">
+            The page was refreshed. Your walk is saved: beat {sess.tempo} BPM.
+          </span>
+          <span
+            className="resume__skip"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              session.dismissResume();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.stopPropagation();
+                session.dismissResume();
+              }
+            }}
+          >
+            Start fresh instead
+          </span>
+        </button>
+      )}
+
       {hood && <UnderTheHood link={link} snap={snap} stats={stats} onClose={closeHood} />}
     </div>
   );
