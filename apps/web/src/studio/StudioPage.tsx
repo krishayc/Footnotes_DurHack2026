@@ -138,6 +138,19 @@ export function StudioPage() {
       </header>
       <StageBanner />
       <IgnoredPhoneNotice />
+      {live &&
+        phoneHere &&
+        snap.phone &&
+        !snap.phone.wakeLock &&
+        (sess.phase === 'calibrating' || a.playing) && (
+          <div className="notice" role="status">
+            <span>
+              The phone can&apos;t keep its screen on, so it may stop counting steps in a pocket. On
+              the phone: Settings → Display &amp; Brightness → Auto-Lock → Never, and turn off Low
+              Power Mode.
+            </span>
+          </div>
+        )}
 
       <main className="studio__body">
         <section className="studio__stage" aria-label="The score, live">

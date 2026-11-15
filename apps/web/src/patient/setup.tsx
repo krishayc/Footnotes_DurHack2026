@@ -8,6 +8,7 @@ import type { LinkSnapshot } from '../shared/connection';
 import { motion } from '../sensor/motion';
 import { wakeLock } from '../sensor/wakeLock';
 import { buzz } from '../shared/haptic';
+import { ScreenWarning } from './ScreenWarning';
 import { sendWalkCommand, walk } from '../sensor/link';
 import { useSteps } from '../sensor/steps';
 import { walks, dayLabel, walkLine } from './history';
@@ -362,6 +363,7 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
               )}
             </div>
           </div>
+          <ScreenWarning />
           {!stuck && laptopCounting && linkProblem(link) && (
             <p className="pt__note pt__warn" role="status">
               Lost the laptop for a moment. Keep walking: your steps are saved and will be sent when

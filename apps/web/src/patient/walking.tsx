@@ -17,6 +17,7 @@ import {
 import { prefs } from './prefs';
 import { BeatPulse, linkProblem, useStartBeatOnce, type Go } from './setup';
 import type { LinkSnapshot } from '../shared/connection';
+import { ScreenWarning } from './ScreenWarning';
 import { StaffPicture } from './StaffPicture';
 import { Screen, SpeakButton } from './ui';
 import { chime, playNotes, speak } from './voice';
@@ -159,6 +160,7 @@ export function Walking({ go, link }: { go: Go; link: LinkSnapshot | null }) {
         <p className="walk__pace">
           {fresh && s.cadenceSpm ? `${Math.round(s.cadenceSpm)} steps a minute` : ' '}
         </p>
+        <ScreenWarning dark />
       </div>
 
       <div className="walk__chips">

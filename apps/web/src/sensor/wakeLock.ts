@@ -33,6 +33,8 @@ class WakeLockKeeper {
     if (!this.wanted) {
       this.wanted = true;
       document.addEventListener('visibilitychange', this.onVisibility);
+      // Some phones only grant the lock from a tap: try again on any tap while it's off.
+      document.addEventListener('pointerdown', this.onTap, { passive: true });
     }
     void this.request();
   }
@@ -40,10 +42,15 @@ class WakeLockKeeper {
   disable() {
     this.wanted = false;
     document.removeEventListener('visibilitychange', this.onVisibility);
+    document.removeEventListener('pointerdown', this.onTap);
     void this.sentinel?.release();
     this.sentinel = null;
     if (this.state !== 'unsupported') this.set('off');
   }
+
+  private onTap = () => {
+    if (this.wanted && this.state !== 'on') void this.request();
+  };
 
   private onVisibility = () => {
     if (this.wanted && document.visibilityState === 'visible') void this.request();
@@ -62,6 +69,9 @@ class WakeLockKeeper {
       s.addEventListener('release', () => {
         this.sentinel = null;
         if (this.state === 'on') this.set('off');
+        // The phone can drop the lock by itself (battery saver, a system dialog). If the page
+        // is still on screen, ask again straight away.
+        if (this.wanted && document.visibilityState === 'visible') void this.request();
       });
     } catch {
       // e.g. battery saver on, or the request did not come from a tap.
