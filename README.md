@@ -31,7 +31,15 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 7     | Visual score + patient screens       | Done                           |
 | 8     | Freeze detection + Daphnet           | Done                           |
 | 9     | Demo hardening                       | Done                           |
-| 10    | Submission materials                 |                                |
+| 10    | Submission materials                 | Done                           |
+
+## Documents
+
+- [docs/demo-script.md](docs/demo-script.md): the 3-minute demo, fallbacks, and what to do if something goes wrong
+- [docs/pitch.md](docs/pitch.md): 30-second pitch, 3-minute table pitch, answers to likely judge questions
+- [docs/devpost.md](docs/devpost.md): the Devpost write-up
+- [docs/daphnet-evaluation.md](docs/daphnet-evaluation.md): freeze detection tested on real patient data
+- [docs/https-setup.md](docs/https-setup.md): getting the phone connected (tunnel, hotspot)
 
 ## Run it
 
@@ -78,19 +86,24 @@ Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
                                           GET /health                          visual score, freeze detection
 ```
 
+The music is fully synthesised in the browser (Tone.js), so there are no sample files to load.
+
 ```
 apps/web/            Vite + React + TypeScript (routes: / , /sensor , /studio)
   src/styles/        design tokens (colours, type, spacing, radii, motion) as CSS variables
   src/ui/            Button (big, debounced), Logo, icons
   src/landing/       role picker + room code entry + device checks
-  src/sensor/        phone app: motion sensor (ring buffer, permission, rate), wake lock, live graph
-  src/studio/        laptop studio
-  public/samples/    bundled audio samples (offline)
-  public/replays/    preprocessed Daphnet clips
-apps/server/         Node + ws relay, static hosting
-packages/shared/     message protocol, room codes, and DSP (step detector + tests) used by web, server and scripts
-scripts/daphnet/     dataset preprocessing + freeze-index evaluation
-docs/                research notes, HTTPS setup, demo script, pitch
+  src/patient/       the phone app a patient sees (setup, walking, after the walk, history, settings)
+  src/sensor/        motion sensor, wake lock, step tracker, link to the laptop, developer screen
+  src/shared/        WebSocket connection, stores, ring buffers, haptics
+  src/studio/        laptop Studio: audio engine, band + arranger, sync, visual score, freeze
+                     watch, Daphnet replay, demo guide, About and research
+  public/replays/    Daphnet replay clips (made by npm run daphnet)
+apps/server/         Node + ws relay, static hosting, recordings endpoint
+packages/shared/     message protocol, room codes, clock sync, DSP (steps, calibration, sync,
+                     arrangement, freeze index) + tests, used by web, server and scripts
+scripts/             tunnel, fake phone, walk analyser, Daphnet evaluation (daphnet.ts)
+docs/                HTTPS setup, Daphnet evaluation, demo script, pitch, Devpost write-up
 ```
 
 ## Calibration and the steady beat
