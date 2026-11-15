@@ -18,6 +18,11 @@ import { UnderTheHood } from './UnderTheHood';
 import { VisualScore } from './VisualScore';
 import { startWalkBridge } from './walkBridge';
 import { StageBanner } from './StageBanner';
+import { FreezePanel } from './FreezePanel';
+import { ReplayPanel } from './ReplayPanel';
+import { freezeWatch } from './freeze';
+import { replay } from './replay';
+import { type StepMode } from './steps';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -50,6 +55,7 @@ export function StudioPage() {
   const a = useStore(audio.state);
   const arr = useStore(arranger.state);
   const stats = useStudioStats();
+  const fz = useStore(freezeWatch.state);
   const [debug, setDebug] = useState(false);
   const [hood, setHood] = useState(false);
   const closeHood = useCallback(() => setHood(false), []);
@@ -68,6 +74,7 @@ export function StudioPage() {
   }, []);
 
   useEffect(() => stepBus.attachLink(link), [link]);
+  useEffect(() => freezeWatch.attachLink(link), [link]);
   useEffect(() => {
     session.attachLink(link);
     const stopBridge = startWalkBridge(link);
@@ -87,6 +94,8 @@ export function StudioPage() {
           link,
           sync,
           arranger,
+          freezeWatch,
+          replay,
           measureMix: () => import('./music/measure').then((m) => m.measureMix()),
         },
       });
@@ -163,12 +172,27 @@ export function StudioPage() {
               value={a.playing ? `${layerCount} of ${LAYER_COUNT + 1}` : '-'}
               hint={a.playing ? 'beat + music' : 'silent'}
             />
-            <Tile label="Freeze watch" value="Clear" hint="freeze detection: Stage 8" />
+            <Tile
+              label="Freeze watch"
+              value={fz.freezing ? 'Freeze detected' : 'Clear'}
+              hint={
+                fz.cause === 'simulated'
+                  ? 'simulated'
+                  : fz.source === 'replay'
+                    ? 'from the recording'
+                    : fz.liveFlag
+                      ? 'phone index high (experimental)'
+                      : 'watching'
+              }
+              alert={fz.freezing}
+            />
           </div>
           <LayersPanel />
           {a.playing && <ControlPanel />}
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}
+          {mode === 'replay' && <ReplayPanel />}
+          <FreezePanel />
           {live && <JoinCard room={room} compact={phoneHere} />}
         </aside>
       </main>
@@ -216,17 +240,16 @@ export function StudioPage() {
   );
 }
 
-function ConnectionStatus({
-  snap,
-  mode,
-}: {
-  snap: StudioLinkSnapshot | null;
-  mode: 'live' | 'tap' | 'sim';
-}) {
+function ConnectionStatus({ snap, mode }: { snap: StudioLinkSnapshot | null; mode: StepMode }) {
   let text: string;
   let color: string;
   if (!snap) {
-    text = mode === 'tap' ? 'Tap mode: no phone needed' : 'Simulated walker: no phone needed';
+    text =
+      mode === 'tap'
+        ? 'Tap mode: no phone needed'
+        : mode === 'replay'
+          ? 'Replaying a real recording: no phone needed'
+          : 'Simulated walker: no phone needed';
     color = 'var(--c-highlight)';
   } else if (snap.status === 'reconnecting' || snap.status === 'connecting') {
     text =
@@ -264,14 +287,16 @@ function Tile({
   value,
   unit,
   hint,
+  alert,
 }: {
   label: string;
   value: string | number;
   unit?: string;
   hint?: string;
+  alert?: boolean;
 }) {
   return (
-    <div className="tile">
+    <div className={`tile${alert ? ' tile--alert' : ''}`}>
       <p className="tile__label">{label}</p>
       <p className="tile__value">
         {value}

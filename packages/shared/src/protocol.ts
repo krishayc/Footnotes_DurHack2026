@@ -162,6 +162,8 @@ export interface WalkStateMsg {
   /** A recent beat, in the PHONE's clock (so the phone can pulse exactly on the beat). */
   beatPhoneT: number | null;
   periodMs: number;
+  /** A freeze was detected (or simulated): the music is in calm recovery mode. */
+  freezing?: boolean;
 }
 
 export type ClientMsg =

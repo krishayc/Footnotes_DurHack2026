@@ -29,7 +29,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 5     | Sync scoring                         | Done                           |
 | 6     | Adaptive arrangement                 | Done (listening check pending) |
 | 7     | Visual score + patient screens       | Done                           |
-| 8     | Freeze detection + Daphnet           |                                |
+| 8     | Freeze detection + Daphnet           | Done                           |
 | 9     | Demo hardening                       |                                |
 | 10    | Submission materials                 |                                |
 
@@ -61,6 +61,11 @@ No phone handy? `npm run fake-phone -- ABCD` joins room ABCD as a pretend phone 
 Tuning on real walks: on the phone's pocket screen tap **Record 30 seconds for tuning**; the
 laptop saves `recordings/walk-<time>.json`. Then `npm run analyze -- recordings/<file> --steps 40`
 replays it through the detector, compares settings and draws the walk as `<file>.html`.
+
+Freeze detection test: download the Daphnet zip (link in
+[docs/daphnet-evaluation.md](docs/daphnet-evaluation.md)) into `scripts/daphnet/raw/`, then
+`npm run daphnet` (about 10 s): writes the results to `docs/`, the thresholds to
+`packages/shared`, and the replay clips to `apps/web/public/replays/`.
 
 Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
 
@@ -174,6 +179,35 @@ The hidden **developer screen** (tap the version in Settings 5 times) keeps the 
 step tuning and walk recording. The phone drives the laptop (find my pace, start/stop, a bit
 faster/slower) and the laptop reports back the phase, beat, score and layers.
 
+## Freeze detection (and the Daphnet test)
+
+- **Freeze index** (Moore et al. 2008): power at 3–8 Hz (trembling) ÷ power at 0.5–3 Hz
+  (walking), over a 4 s window every 0.5 s, plus a minimum movement power so standing still
+  isn't a freeze. One shared implementation
+  ([packages/shared/src/dsp/freeze.ts](packages/shared/src/dsp/freeze.ts)) runs in the
+  evaluation, the replay and the live phone watch.
+- **Tested on real patients:** `npm run daphnet` runs it on the whole Daphnet dataset (10
+  patients, 237 annotated freezes) for the ankle, thigh and hip sensors, picks thresholds and,
+  to be fair, re-tests with each patient left out. Full results:
+  [docs/daphnet-evaluation.md](docs/daphnet-evaluation.md). In short: the ankle works best
+  (about 86% of freeze time flagged, 77% of normal time left alone, comparable with the
+  original paper), sensors higher up do worse, and **all of them give far too many false
+  alarms for daily life** (about 115+ an hour in this freeze-provoking lab data).
+- **Recovery mode:** on the next beat after a freeze is flagged, every layer fades out and a
+  calm, recognisable motif (D F♯ A F♯ | E G A) plays on every beat over the unchanged pulse.
+  No tempo change, no volume jump. When the freeze ends, the motif finishes its bar and the
+  music rebuilds one layer per bar. The score turns a calm blue; the phone says "Take your
+  time. Listen for the beat, then take a big step."
+- **Replay real freeze (Daphnet)** in the Studio's bottom bar plays a real recording through
+  the same pipeline (thigh signal → step detector; chosen sensor → freeze index), with a
+  timeline of the physiotherapists' marked freeze against ours. Measured on Patient 7: the
+  music builds to all 5 layers, the freeze (marked at 20.0 s) is flagged at 22.5 s, recovery
+  plays, and the music is back to 5 layers 12 s after the freeze ends.
+- **Live phone freeze index is experimental** and only shown by default (a tick-box lets it
+  change the music). **Simulate freeze** is the fallback button.
+- Replay clips: 4 clips, one per patient. Only 2 of 23 suitable freezes had no false alarm
+  anywhere in a 40 s clip; the other two are labelled "(includes a false alarm)".
+
 ## Clock sync (phone ↔ laptop)
 
 The phone stamps each step with its own clock; the laptop plays the beat on its clock. To
@@ -204,4 +238,7 @@ _Being written._
 ## Credits and licences
 
 - Fonts: Atkinson Hyperlegible and Bricolage Grotesque, SIL Open Font License, via Fontsource.
-- Daphnet Freezing of Gait dataset (UCI ML Repository, CC BY 4.0): _to be added in Stage 8._
+- **Daphnet Freezing of Gait dataset** (UCI ML Repository, CC BY 4.0). Replay clips in
+  `apps/web/public/replays/` are excerpts of it. Bächlin, Plotnik, Roggen, Maidan, Hausdorff,
+  Giladi, Tröster, _Wearable Assistant for Parkinson's Disease Patients With the Freezing of
+  Gait Symptom_, IEEE Trans. Inf. Technol. Biomed. 14(2):436–446, 2010.

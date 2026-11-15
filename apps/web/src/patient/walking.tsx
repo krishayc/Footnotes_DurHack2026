@@ -85,13 +85,25 @@ export function Walking({ go }: { go: Go }) {
   const paused = isPaused();
   const score = st?.score ?? 0;
   const musicStopped = !!st && st.phase !== 'walking';
+  const freezing = !musicStopped && !!st?.freezing;
   const status = musicStopped
     ? 'The music is stopped on the laptop'
-    : paused
-      ? 'Paused. The music will help you restart.'
-      : score >= 0.6
-        ? 'In step'
-        : 'Finding the beat';
+    : freezing
+      ? 'Take your time. Listen for the beat, then take a big step.'
+      : paused
+        ? 'Paused. The music will help you restart.'
+        : score >= 0.6
+          ? 'In step'
+          : 'Finding the beat';
+  // A freeze: one gentle buzz and a calm spoken prompt (if voice is on), once per freeze.
+  const wasFreezing = useRef(false);
+  useEffect(() => {
+    if (freezing && !wasFreezing.current) {
+      buzz(200);
+      speak('Take your time. Listen for the beat, then take a big step.');
+    }
+    wasFreezing.current = freezing;
+  }, [freezing]);
   const fresh = s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
   const on = st?.layersOn ?? [];
   const R = 34;
@@ -149,6 +161,7 @@ export function Walking({ go }: { go: Go }) {
         <p className="walk__chipslabel">Playing now</p>
         <ul className="chips chips--walk">
           <li className="chip chip--on">Beat</li>
+          {freezing && <li className="chip chip--on">Recovery tune</li>}
           {ALL_LAYERS.map((name) =>
             on.includes(name) ? (
               <li key={name} className="chip chip--on">

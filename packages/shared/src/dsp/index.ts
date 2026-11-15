@@ -4,3 +4,5 @@ export * from './synthWalk';
 export * from './calibration';
 export * from './sync';
 export * from './arrangement';
+export * from './freeze';
+export * from './freezeThresholds';

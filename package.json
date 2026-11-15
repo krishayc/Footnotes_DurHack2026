@@ -21,7 +21,8 @@
     "format:check": "prettier --check .",
     "test": "npm test --workspaces --if-present",
     "fake-phone": "tsx scripts/fake-phone.ts",
-    "analyze": "tsx scripts/analyze.ts"
+    "analyze": "tsx scripts/analyze.ts",
+    "daphnet": "tsx scripts/daphnet.ts"
   },
   "engines": {
     "node": ">=20"
@@ -33,9 +34,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
+    "tsx": "^4.20.0",
     "typescript": "~5.9",
-    "typescript-eslint": "^8.72.2",
-    "tsx": "^4.20.0"
+    "typescript-eslint": "^8.72.2"
   },
   "type": "module"
 }

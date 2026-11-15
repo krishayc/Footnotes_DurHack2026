@@ -1,0 +1,953 @@
+{
+  "meta": {
+    "dataset": "Daphnet Freezing of Gait (UCI ML Repository, CC BY 4.0), Bächlin et al. 2010",
+    "generated": "2026-11-15",
+    "subjects": 10,
+    "subjectsWithFreezes": 8,
+    "freezeEpisodes": 237,
+    "experimentHours": 4.95,
+    "method": {
+      "rateHz": 64,
+      "windowS": 4,
+      "hopS": 0.5,
+      "locomotionBandHz": [
+        0.5,
+        3
+      ],
+      "freezeBandHz": [
+        3,
+        8
+      ],
+      "hold": "enter after 1 window over threshold, leave after 2 under",
+      "eventMatch": "flag between 2 s before onset and 1 s after the end",
+      "falseAlarm": "flagged stretch not overlapping any freeze ±2 s",
+      "thresholdChoice": "grid search maximising sqrt(sensitivity × specificity), window level"
+    }
+  },
+  "results": {
+    "ankle": {
+      "signal": "Ankle (magnitude)",
+      "thresholdsTunedOnAll": {
+        "fi": 1.075,
+        "power": 1.3087
+      },
+      "tunedOnAll": {
+        "windowSensitivity": 0.844,
+        "windowSpecificity": 0.802,
+        "eventsDetected": 231,
+        "events": 237,
+        "eventDetectionRate": 0.975,
+        "medianLatencyS": -1.5,
+        "falseAlarms": 566,
+        "falseAlarmsPerHour": 114.3,
+        "hours": 4.95
+      },
+      "confirmationTradeoff": [
+        {
+          "confirmS": 0.5,
+          "windowSensitivity": 0.844,
+          "windowSpecificity": 0.802,
+          "eventsDetected": 231,
+          "events": 237,
+          "eventDetectionRate": 0.975,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 566,
+          "falseAlarmsPerHour": 114.3,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 1,
+          "windowSensitivity": 0.806,
+          "windowSpecificity": 0.827,
+          "eventsDetected": 227,
+          "events": 237,
+          "eventDetectionRate": 0.958,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 498,
+          "falseAlarmsPerHour": 100.6,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 2,
+          "windowSensitivity": 0.726,
+          "windowSpecificity": 0.87,
+          "eventsDetected": 212,
+          "events": 237,
+          "eventDetectionRate": 0.895,
+          "medianLatencyS": -1.1,
+          "falseAlarms": 342,
+          "falseAlarmsPerHour": 69.1,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 3,
+          "windowSensitivity": 0.643,
+          "windowSpecificity": 0.901,
+          "eventsDetected": 198,
+          "events": 237,
+          "eventDetectionRate": 0.835,
+          "medianLatencyS": -0.2,
+          "falseAlarms": 227,
+          "falseAlarmsPerHour": 45.8,
+          "hours": 4.95
+        }
+      ],
+      "leaveOneSubjectOut": {
+        "windowSensitivity": 0.857,
+        "windowSpecificity": 0.766,
+        "eventsDetected": 233,
+        "events": 237,
+        "eventDetectionRate": 0.983,
+        "medianLatencyS": -1.6,
+        "falseAlarms": 568,
+        "falseAlarmsPerHour": 114.7,
+        "hours": 4.95
+      },
+      "perSubject": {
+        "S01": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.8218
+          },
+          "windowSensitivity": 0.946,
+          "windowSpecificity": 0.613,
+          "eventsDetected": 23,
+          "events": 23,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 99,
+          "falseAlarmsPerHour": 187.6,
+          "hours": 0.53
+        },
+        "S02": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 1.013
+          },
+          "windowSensitivity": 0.832,
+          "windowSpecificity": 0.839,
+          "eventsDetected": 22,
+          "events": 24,
+          "eventDetectionRate": 0.917,
+          "medianLatencyS": 1.1,
+          "falseAlarms": 46,
+          "falseAlarmsPerHour": 117,
+          "hours": 0.39
+        },
+        "S03": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 2.1349
+          },
+          "windowSensitivity": 0.892,
+          "windowSpecificity": 0.698,
+          "eventsDetected": 49,
+          "events": 49,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 53,
+          "falseAlarmsPerHour": 94.9,
+          "hours": 0.56
+        },
+        "S04": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 3.2214
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.887,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 79,
+          "falseAlarmsPerHour": 137.4,
+          "hours": 0.57
+        },
+        "S05": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 1.1123
+          },
+          "windowSensitivity": 0.817,
+          "windowSpecificity": 0.795,
+          "eventsDetected": 65,
+          "events": 66,
+          "eventDetectionRate": 0.985,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 36,
+          "falseAlarmsPerHour": 62,
+          "hours": 0.58
+        },
+        "S06": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 1.4696
+          },
+          "windowSensitivity": 0.829,
+          "windowSpecificity": 0.852,
+          "eventsDetected": 9,
+          "events": 10,
+          "eventDetectionRate": 0.9,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 56,
+          "falseAlarmsPerHour": 101.3,
+          "hours": 0.55
+        },
+        "S07": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 0.7791
+          },
+          "windowSensitivity": 0.848,
+          "windowSpecificity": 0.786,
+          "eventsDetected": 24,
+          "events": 24,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 53,
+          "falseAlarmsPerHour": 118.5,
+          "hours": 0.45
+        },
+        "S08": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 1.0315
+          },
+          "windowSensitivity": 0.888,
+          "windowSpecificity": 0.495,
+          "eventsDetected": 14,
+          "events": 14,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 29,
+          "falseAlarmsPerHour": 135.6,
+          "hours": 0.21
+        },
+        "S09": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 1.6232
+          },
+          "windowSensitivity": 0.803,
+          "windowSpecificity": 0.836,
+          "eventsDetected": 27,
+          "events": 27,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -0.1,
+          "falseAlarms": 38,
+          "falseAlarmsPerHour": 78.6,
+          "hours": 0.48
+        },
+        "S10": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 1.5818
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.859,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 79,
+          "falseAlarmsPerHour": 127.5,
+          "hours": 0.62
+        }
+      }
+    },
+    "thigh": {
+      "signal": "Thigh, above the knee (magnitude)",
+      "thresholdsTunedOnAll": {
+        "fi": 0.896,
+        "power": 0.545
+      },
+      "tunedOnAll": {
+        "windowSensitivity": 0.846,
+        "windowSpecificity": 0.73,
+        "eventsDetected": 228,
+        "events": 237,
+        "eventDetectionRate": 0.962,
+        "medianLatencyS": -1.5,
+        "falseAlarms": 754,
+        "falseAlarmsPerHour": 152.3,
+        "hours": 4.95
+      },
+      "confirmationTradeoff": [
+        {
+          "confirmS": 0.5,
+          "windowSensitivity": 0.846,
+          "windowSpecificity": 0.73,
+          "eventsDetected": 228,
+          "events": 237,
+          "eventDetectionRate": 0.962,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 754,
+          "falseAlarmsPerHour": 152.3,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 1,
+          "windowSensitivity": 0.803,
+          "windowSpecificity": 0.763,
+          "eventsDetected": 226,
+          "events": 237,
+          "eventDetectionRate": 0.954,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 664,
+          "falseAlarmsPerHour": 134.1,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 2,
+          "windowSensitivity": 0.717,
+          "windowSpecificity": 0.821,
+          "eventsDetected": 208,
+          "events": 237,
+          "eventDetectionRate": 0.878,
+          "medianLatencyS": -0.9,
+          "falseAlarms": 445,
+          "falseAlarmsPerHour": 89.9,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 3,
+          "windowSensitivity": 0.628,
+          "windowSpecificity": 0.861,
+          "eventsDetected": 188,
+          "events": 237,
+          "eventDetectionRate": 0.793,
+          "medianLatencyS": 0.1,
+          "falseAlarms": 294,
+          "falseAlarmsPerHour": 59.4,
+          "hours": 4.95
+        }
+      ],
+      "leaveOneSubjectOut": {
+        "windowSensitivity": 0.842,
+        "windowSpecificity": 0.692,
+        "eventsDetected": 226,
+        "events": 237,
+        "eventDetectionRate": 0.954,
+        "medianLatencyS": -1.5,
+        "falseAlarms": 727,
+        "falseAlarmsPerHour": 146.8,
+        "hours": 4.95
+      },
+      "perSubject": {
+        "S01": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.2409
+          },
+          "windowSensitivity": 0.868,
+          "windowSpecificity": 0.32,
+          "eventsDetected": 22,
+          "events": 23,
+          "eventDetectionRate": 0.957,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 132,
+          "falseAlarmsPerHour": 250.1,
+          "hours": 0.53
+        },
+        "S02": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.4234
+          },
+          "windowSensitivity": 0.86,
+          "windowSpecificity": 0.814,
+          "eventsDetected": 20,
+          "events": 24,
+          "eventDetectionRate": 0.833,
+          "medianLatencyS": 0.7,
+          "falseAlarms": 53,
+          "falseAlarmsPerHour": 134.8,
+          "hours": 0.39
+        },
+        "S03": {
+          "thresholds": {
+            "fi": 1.075,
+            "power": 1.1041
+          },
+          "windowSensitivity": 0.585,
+          "windowSpecificity": 0.829,
+          "eventsDetected": 47,
+          "events": 49,
+          "eventDetectionRate": 0.959,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 30,
+          "falseAlarmsPerHour": 53.7,
+          "hours": 0.56
+        },
+        "S04": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.912
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.793,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 118,
+          "falseAlarmsPerHour": 205.2,
+          "hours": 0.57
+        },
+        "S05": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.4505
+          },
+          "windowSensitivity": 0.858,
+          "windowSpecificity": 0.764,
+          "eventsDetected": 66,
+          "events": 66,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 40,
+          "falseAlarmsPerHour": 68.9,
+          "hours": 0.58
+        },
+        "S06": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.5344
+          },
+          "windowSensitivity": 0.863,
+          "windowSpecificity": 0.696,
+          "eventsDetected": 9,
+          "events": 10,
+          "eventDetectionRate": 0.9,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 128,
+          "falseAlarmsPerHour": 231.6,
+          "hours": 0.55
+        },
+        "S07": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.3497
+          },
+          "windowSensitivity": 0.817,
+          "windowSpecificity": 0.725,
+          "eventsDetected": 22,
+          "events": 24,
+          "eventDetectionRate": 0.917,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 90,
+          "falseAlarmsPerHour": 201.2,
+          "hours": 0.45
+        },
+        "S08": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.3692
+          },
+          "windowSensitivity": 0.983,
+          "windowSpecificity": 0.235,
+          "eventsDetected": 14,
+          "events": 14,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 23,
+          "falseAlarmsPerHour": 107.5,
+          "hours": 0.21
+        },
+        "S09": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 0.5641
+          },
+          "windowSensitivity": 0.903,
+          "windowSpecificity": 0.827,
+          "eventsDetected": 26,
+          "events": 27,
+          "eventDetectionRate": 0.963,
+          "medianLatencyS": -0.3,
+          "falseAlarms": 50,
+          "falseAlarmsPerHour": 103.4,
+          "hours": 0.48
+        },
+        "S10": {
+          "thresholds": {
+            "fi": 0.896,
+            "power": 1.1971
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.917,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 63,
+          "falseAlarmsPerHour": 101.7,
+          "hours": 0.62
+        }
+      }
+    },
+    "trunk": {
+      "signal": "Hip / lower back (magnitude)",
+      "thresholdsTunedOnAll": {
+        "fi": 1.548,
+        "power": 1.0662
+      },
+      "tunedOnAll": {
+        "windowSensitivity": 0.856,
+        "windowSpecificity": 0.674,
+        "eventsDetected": 232,
+        "events": 237,
+        "eventDetectionRate": 0.979,
+        "medianLatencyS": -1.6,
+        "falseAlarms": 648,
+        "falseAlarmsPerHour": 130.9,
+        "hours": 4.95
+      },
+      "confirmationTradeoff": [
+        {
+          "confirmS": 0.5,
+          "windowSensitivity": 0.856,
+          "windowSpecificity": 0.674,
+          "eventsDetected": 232,
+          "events": 237,
+          "eventDetectionRate": 0.979,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 648,
+          "falseAlarmsPerHour": 130.9,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 1,
+          "windowSensitivity": 0.813,
+          "windowSpecificity": 0.702,
+          "eventsDetected": 227,
+          "events": 237,
+          "eventDetectionRate": 0.958,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 579,
+          "falseAlarmsPerHour": 116.9,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 2,
+          "windowSensitivity": 0.733,
+          "windowSpecificity": 0.751,
+          "eventsDetected": 220,
+          "events": 237,
+          "eventDetectionRate": 0.928,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 409,
+          "falseAlarmsPerHour": 82.6,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 3,
+          "windowSensitivity": 0.651,
+          "windowSpecificity": 0.785,
+          "eventsDetected": 207,
+          "events": 237,
+          "eventDetectionRate": 0.873,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 294,
+          "falseAlarmsPerHour": 59.4,
+          "hours": 4.95
+        }
+      ],
+      "leaveOneSubjectOut": {
+        "windowSensitivity": 0.799,
+        "windowSpecificity": 0.682,
+        "eventsDetected": 230,
+        "events": 237,
+        "eventDetectionRate": 0.97,
+        "medianLatencyS": -1.6,
+        "falseAlarms": 657,
+        "falseAlarmsPerHour": 132.7,
+        "hours": 4.95
+      },
+      "perSubject": {
+        "S01": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 0.4887
+          },
+          "windowSensitivity": 0.99,
+          "windowSpecificity": 0.239,
+          "eventsDetected": 23,
+          "events": 23,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 62,
+          "falseAlarmsPerHour": 117.5,
+          "hours": 0.53
+        },
+        "S02": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 0.799
+          },
+          "windowSensitivity": 0.865,
+          "windowSpecificity": 0.809,
+          "eventsDetected": 24,
+          "events": 24,
+          "eventDetectionRate": 1,
+          "medianLatencyS": 0.3,
+          "falseAlarms": 43,
+          "falseAlarmsPerHour": 109.4,
+          "hours": 0.39
+        },
+        "S03": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 1.4526
+          },
+          "windowSensitivity": 0.948,
+          "windowSpecificity": 0.707,
+          "eventsDetected": 49,
+          "events": 49,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 65,
+          "falseAlarmsPerHour": 116.4,
+          "hours": 0.56
+        },
+        "S04": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 2.2392
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.749,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 83,
+          "falseAlarmsPerHour": 144.3,
+          "hours": 0.57
+        },
+        "S05": {
+          "thresholds": {
+            "fi": 1.858,
+            "power": 0.815
+          },
+          "windowSensitivity": 0.683,
+          "windowSpecificity": 0.829,
+          "eventsDetected": 65,
+          "events": 66,
+          "eventDetectionRate": 0.985,
+          "medianLatencyS": -0.8,
+          "falseAlarms": 48,
+          "falseAlarmsPerHour": 82.7,
+          "hours": 0.58
+        },
+        "S06": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 1.2386
+          },
+          "windowSensitivity": 0.692,
+          "windowSpecificity": 0.604,
+          "eventsDetected": 9,
+          "events": 10,
+          "eventDetectionRate": 0.9,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 93,
+          "falseAlarmsPerHour": 168.2,
+          "hours": 0.55
+        },
+        "S07": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 0.5856
+          },
+          "windowSensitivity": 0.945,
+          "windowSpecificity": 0.615,
+          "eventsDetected": 24,
+          "events": 24,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.8,
+          "falseAlarms": 108,
+          "falseAlarmsPerHour": 241.5,
+          "hours": 0.45
+        },
+        "S08": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 10.8291
+          },
+          "windowSensitivity": 0.479,
+          "windowSpecificity": 0.504,
+          "eventsDetected": 13,
+          "events": 14,
+          "eventDetectionRate": 0.929,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 28,
+          "falseAlarmsPerHour": 130.9,
+          "hours": 0.21
+        },
+        "S09": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 1.2343
+          },
+          "windowSensitivity": 0.786,
+          "windowSpecificity": 0.897,
+          "eventsDetected": 23,
+          "events": 27,
+          "eventDetectionRate": 0.852,
+          "medianLatencyS": 0.1,
+          "falseAlarms": 30,
+          "falseAlarmsPerHour": 62.1,
+          "hours": 0.48
+        },
+        "S10": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 2.7045
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.868,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 97,
+          "falseAlarmsPerHour": 156.6,
+          "hours": 0.62
+        }
+      }
+    },
+    "ankleVertical": {
+      "signal": "Ankle, vertical axis only (as in the papers)",
+      "thresholdsTunedOnAll": {
+        "fi": 1.29,
+        "power": 1.5225
+      },
+      "tunedOnAll": {
+        "windowSensitivity": 0.812,
+        "windowSpecificity": 0.803,
+        "eventsDetected": 230,
+        "events": 237,
+        "eventDetectionRate": 0.97,
+        "medianLatencyS": -1.5,
+        "falseAlarms": 669,
+        "falseAlarmsPerHour": 135.1,
+        "hours": 4.95
+      },
+      "confirmationTradeoff": [
+        {
+          "confirmS": 0.5,
+          "windowSensitivity": 0.812,
+          "windowSpecificity": 0.803,
+          "eventsDetected": 230,
+          "events": 237,
+          "eventDetectionRate": 0.97,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 669,
+          "falseAlarmsPerHour": 135.1,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 1,
+          "windowSensitivity": 0.77,
+          "windowSpecificity": 0.832,
+          "eventsDetected": 225,
+          "events": 237,
+          "eventDetectionRate": 0.949,
+          "medianLatencyS": -1.4,
+          "falseAlarms": 577,
+          "falseAlarmsPerHour": 116.5,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 2,
+          "windowSensitivity": 0.678,
+          "windowSpecificity": 0.882,
+          "eventsDetected": 212,
+          "events": 237,
+          "eventDetectionRate": 0.895,
+          "medianLatencyS": -0.5,
+          "falseAlarms": 358,
+          "falseAlarmsPerHour": 72.3,
+          "hours": 4.95
+        },
+        {
+          "confirmS": 3,
+          "windowSensitivity": 0.588,
+          "windowSpecificity": 0.915,
+          "eventsDetected": 190,
+          "events": 237,
+          "eventDetectionRate": 0.802,
+          "medianLatencyS": 0.4,
+          "falseAlarms": 194,
+          "falseAlarmsPerHour": 39.2,
+          "hours": 4.95
+        }
+      ],
+      "leaveOneSubjectOut": {
+        "windowSensitivity": 0.816,
+        "windowSpecificity": 0.78,
+        "eventsDetected": 229,
+        "events": 237,
+        "eventDetectionRate": 0.966,
+        "medianLatencyS": -1.5,
+        "falseAlarms": 654,
+        "falseAlarmsPerHour": 132.1,
+        "hours": 4.95
+      },
+      "perSubject": {
+        "S01": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 1.0043
+          },
+          "windowSensitivity": 0.922,
+          "windowSpecificity": 0.743,
+          "eventsDetected": 21,
+          "events": 23,
+          "eventDetectionRate": 0.913,
+          "medianLatencyS": -1.5,
+          "falseAlarms": 74,
+          "falseAlarmsPerHour": 140.2,
+          "hours": 0.53
+        },
+        "S02": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 1.1522
+          },
+          "windowSensitivity": 0.84,
+          "windowSpecificity": 0.799,
+          "eventsDetected": 24,
+          "events": 24,
+          "eventDetectionRate": 1,
+          "medianLatencyS": 0.1,
+          "falseAlarms": 73,
+          "falseAlarmsPerHour": 185.7,
+          "hours": 0.39
+        },
+        "S03": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 2.4335
+          },
+          "windowSensitivity": 0.955,
+          "windowSpecificity": 0.71,
+          "eventsDetected": 49,
+          "events": 49,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 51,
+          "falseAlarmsPerHour": 91.3,
+          "hours": 0.56
+        },
+        "S04": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 3.3965
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.935,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 65,
+          "falseAlarmsPerHour": 113,
+          "hours": 0.57
+        },
+        "S05": {
+          "thresholds": {
+            "fi": 1.548,
+            "power": 1.2799
+          },
+          "windowSensitivity": 0.667,
+          "windowSpecificity": 0.845,
+          "eventsDetected": 64,
+          "events": 66,
+          "eventDetectionRate": 0.97,
+          "medianLatencyS": -0.8,
+          "falseAlarms": 37,
+          "falseAlarmsPerHour": 63.7,
+          "hours": 0.58
+        },
+        "S06": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 1.7112
+          },
+          "windowSensitivity": 0.658,
+          "windowSpecificity": 0.905,
+          "eventsDetected": 7,
+          "events": 10,
+          "eventDetectionRate": 0.7,
+          "medianLatencyS": -0.5,
+          "falseAlarms": 48,
+          "falseAlarmsPerHour": 86.8,
+          "hours": 0.55
+        },
+        "S07": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 0.9088
+          },
+          "windowSensitivity": 0.854,
+          "windowSpecificity": 0.809,
+          "eventsDetected": 23,
+          "events": 24,
+          "eventDetectionRate": 0.958,
+          "medianLatencyS": -1.6,
+          "falseAlarms": 57,
+          "falseAlarmsPerHour": 127.5,
+          "hours": 0.45
+        },
+        "S08": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 1.1368
+          },
+          "windowSensitivity": 0.881,
+          "windowSpecificity": 0.456,
+          "eventsDetected": 14,
+          "events": 14,
+          "eventDetectionRate": 1,
+          "medianLatencyS": -1.7,
+          "falseAlarms": 35,
+          "falseAlarmsPerHour": 163.6,
+          "hours": 0.21
+        },
+        "S09": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 2.0042
+          },
+          "windowSensitivity": 0.753,
+          "windowSpecificity": 0.843,
+          "eventsDetected": 27,
+          "events": 27,
+          "eventDetectionRate": 1,
+          "medianLatencyS": 0.1,
+          "falseAlarms": 40,
+          "falseAlarmsPerHour": 82.8,
+          "hours": 0.48
+        },
+        "S10": {
+          "thresholds": {
+            "fi": 1.29,
+            "power": 1.8784
+          },
+          "windowSensitivity": 0,
+          "windowSpecificity": 0.753,
+          "eventsDetected": 0,
+          "events": 0,
+          "eventDetectionRate": 0,
+          "medianLatencyS": null,
+          "falseAlarms": 174,
+          "falseAlarmsPerHour": 280.9,
+          "hours": 0.62
+        }
+      }
+    }
+  }
+}

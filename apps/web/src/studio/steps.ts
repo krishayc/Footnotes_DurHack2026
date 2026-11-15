@@ -6,6 +6,7 @@
  *                       link fails at the demo table).
  *  - Simulated walker:  a built-in walker with adjustable pace and timing jitter (demo without
  *                       anyone walking).
+ *  - Replay:            steps found in a real Daphnet recording being replayed (replay.ts).
  *
  * Everything downstream (calibration, sync scoring, music, visuals) only listens to the bus,
  * so it can't tell which source is active. All times are laptop performance.now() ms.
@@ -14,7 +15,7 @@ import { Store, loadJSON, saveJSON } from '../shared/store';
 import { audio } from './audio/engine';
 import type { StudioLink } from './link';
 
-export type StepMode = 'live' | 'tap' | 'sim';
+export type StepMode = 'live' | 'tap' | 'sim' | 'replay';
 
 export interface BusStep {
   /** Laptop time when the foot landed, ms. */
@@ -51,7 +52,8 @@ class StepBus {
 
   constructor() {
     this.settings.subscribe(() => {
-      saveJSON(KEY, this.settings.get());
+      const st = this.settings.get();
+      saveJSON(KEY, st.mode === 'replay' ? { ...st, mode: 'sim' } : st);
       this.applyMode();
     });
     this.applyMode();
@@ -84,6 +86,12 @@ class StepBus {
   tap(t = performance.now()) {
     if (this.settings.get().mode !== 'tap') return;
     this.emit({ t, inferred: false, source: 'tap' });
+  }
+
+  /** Replay mode: a step found in the recording being replayed. */
+  replayStep(t: number) {
+    if (this.settings.get().mode !== 'replay') return;
+    this.emit({ t, inferred: false, source: 'replay' });
   }
 
   private emit(step: BusStep) {

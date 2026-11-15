@@ -44,6 +44,7 @@ export function startWalkBridge(link: StudioLink) {
       nextLayer: a.playing && nextIdx >= 0 ? LAYER_NAMES[nextIdx] : null,
       beatPhoneT: a.playing && lastBeat && off !== undefined ? lastBeat.t + off : null,
       periodMs: audio.periodMs,
+      freezing: a.playing && arr.recovering,
     };
   };
 

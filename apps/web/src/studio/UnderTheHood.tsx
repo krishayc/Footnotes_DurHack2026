@@ -1,10 +1,11 @@
 /**
  * "Under the hood": the technical panel for judges. Opens as a drawer over the score.
  * Raw signal and steps from the phone, the timing maths, the connection and clock sync,
- * how the phone counts, the music debug controls. (Freeze index arrives in Stage 8.)
+ * how the phone counts, the music debug controls. The freeze index and our Daphnet evaluation.
  */
 import { useEffect, useState } from 'react';
 import { saveLastMinute } from './saveRecording';
+import { FreezeDetails } from './FreezeDetails';
 import { LiveLane } from './LiveLane';
 import { MusicDebug } from './LayersPanel';
 import { PhoneCounting } from './PhoneCounting';
@@ -66,6 +67,7 @@ export function UnderTheHood({ link, snap, stats, onClose }: Props) {
           </div>
         </section>
         <SyncDetails />
+        <FreezeDetails />
         <section className="panel" aria-labelledby="conn-h">
           <h2 id="conn-h" className="panel__h">
             Link and clock sync
