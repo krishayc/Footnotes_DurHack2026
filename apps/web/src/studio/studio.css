@@ -852,3 +852,85 @@
   color: var(--d-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Stage 9: demo guide, about ---------- */
+.guide {
+  position: fixed;
+  left: var(--s-5);
+  bottom: 96px;
+  z-index: 30;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-5);
+  border-radius: 20px;
+  border: 2px solid var(--c-highlight);
+  background: #16241f;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  color: var(--d-text);
+}
+.guide__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-2);
+  align-items: baseline;
+}
+.guide__head h2 {
+  font-size: 15px;
+  color: var(--d-muted);
+}
+.guide__clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--d-muted);
+}
+.guide__clock--late {
+  color: var(--d-slightly-off);
+}
+.guide__title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--c-highlight);
+}
+.guide__say {
+  font-size: 17px;
+  line-height: 1.45;
+}
+.guide__do {
+  font-size: 15px;
+  color: var(--d-muted);
+}
+.guide__actions,
+.guide__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.guide__nav {
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--d-border);
+}
+.sources,
+.limits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-left: 1.2em;
+}
+.sources a {
+  color: var(--c-highlight);
+  font-weight: 700;
+}
+.limits li {
+  line-height: 1.5;
+}
+.studio__footright {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}

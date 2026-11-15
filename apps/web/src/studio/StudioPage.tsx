@@ -19,6 +19,8 @@ import { VisualScore } from './VisualScore';
 import { startWalkBridge } from './walkBridge';
 import { StageBanner } from './StageBanner';
 import { FreezePanel } from './FreezePanel';
+import { AboutPanel } from './AboutPanel';
+import { DemoGuide } from './DemoGuide';
 import { ReplayPanel } from './ReplayPanel';
 import { freezeWatch } from './freeze';
 import { replay } from './replay';
@@ -59,8 +61,11 @@ export function StudioPage() {
   const [debug, setDebug] = useState(false);
   const [hood, setHood] = useState(false);
   const closeHood = useCallback(() => setHood(false), []);
+  const [about, setAbout] = useState(false);
+  const closeAbout = useCallback(() => setAbout(false), []);
+  const [guide, setGuide] = useState(false);
 
-  // Press D (outside text fields) for the hidden music debug panel; H for Under the hood.
+  // Keys (outside text fields): D music debug, H Under the hood, G demo guide, A about.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -68,6 +73,8 @@ export function StudioPage() {
       const k = e.key.toLowerCase();
       if (k === 'd') setDebug((d) => !d);
       if (k === 'h') setHood((v) => !v);
+      if (k === 'g') setGuide((v) => !v);
+      if (k === 'a') setAbout((v) => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -199,14 +206,32 @@ export function StudioPage() {
 
       <footer className="studio__footer">
         <ModeBar />
-        <button
-          type="button"
-          className="modebar__btn modebar__btn--hood"
-          aria-pressed={hood}
-          onClick={() => setHood(true)}
-        >
-          Under the hood
-        </button>
+        <div className="studio__footright">
+          <button
+            type="button"
+            className="modebar__btn"
+            aria-pressed={guide}
+            onClick={() => setGuide((v) => !v)}
+          >
+            Demo guide
+          </button>
+          <button
+            type="button"
+            className="modebar__btn"
+            aria-pressed={about}
+            onClick={() => setAbout(true)}
+          >
+            About and research
+          </button>
+          <button
+            type="button"
+            className="modebar__btn modebar__btn--hood"
+            aria-pressed={hood}
+            onClick={() => setHood(true)}
+          >
+            Under the hood
+          </button>
+        </div>
       </footer>
 
       {sess.resumePending && a.status !== 'on' && (
@@ -235,6 +260,8 @@ export function StudioPage() {
         </button>
       )}
 
+      {guide && <DemoGuide onClose={() => setGuide(false)} onHood={() => setHood(true)} />}
+      {about && <AboutPanel onClose={closeAbout} />}
       {hood && <UnderTheHood link={link} snap={snap} stats={stats} onClose={closeHood} />}
     </div>
   );

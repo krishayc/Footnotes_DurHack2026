@@ -30,7 +30,7 @@ A live visual score on the laptop shows the walker and the music locking togethe
 | 6     | Adaptive arrangement                 | Done (listening check pending) |
 | 7     | Visual score + patient screens       | Done                           |
 | 8     | Freeze detection + Daphnet           | Done                           |
-| 9     | Demo hardening                       |                                |
+| 9     | Demo hardening                       | Done                           |
 | 10    | Submission materials                 |                                |
 
 ## Run it
@@ -208,6 +208,26 @@ faster/slower) and the laptop reports back the phase, beat, score and layers.
 - Replay clips: 4 clips, one per patient. Only 2 of 23 suitable freezes had no false alarm
   anywhere in a 40 s clip; the other two are labelled "(includes a false alarm)".
 
+## Demo day
+
+- **Demo guide** (Studio button, or **G**): the 3-minute judge script one step at a time, with
+  a clock, the words to say, and a button for each step's action and its no-phone fallback
+  (simulated walker, Simulate freeze). Tested end to end with only the fallbacks: calibration
+  (92 steps/min → 97 BPM beat), bloom, drift back to the pulse, the real freeze replay, Under
+  the hood, with no console errors.
+- **About and research** (button, or **A**): what it is and isn't, sources (each checked
+  against its abstract, or marked "to verify"), and honest limits.
+- **Fallbacks:** Tap mode (spacebar or pad), Simulated walker, Replay real freeze, Simulate
+  freeze. A refresh mid-walk offers one click to bring the music back.
+- **Offline:** no external requests at run time (fonts, music and replay clips are bundled).
+  With no internet the Cloudflare tunnel can't run: put laptop and phone on a phone hotspot and
+  use `npm run dev:https` (see [docs/https-setup.md](docs/https-setup.md)). The laptop alone
+  (tap, simulated walker, replay) needs no network at all.
+- **Saved locally:** Studio volume, beat offset, step source and simulated walker settings;
+  on the phone, preferences, step settings and walk history.
+- Not yet measured: frame rate of the score on the demo laptop (my test browser was hidden,
+  which pauses drawing). Check it looks smooth on the real laptop before the demo.
+
 ## Clock sync (phone ↔ laptop)
 
 The phone stamps each step with its own clock; the laptop plays the beat on its clock. To
@@ -229,11 +249,26 @@ bundled locally so the demo works offline.
 
 ## Research
 
-_Being written. Every figure is marked "to verify" until checked against the source._
+- **Rhythmic Auditory Stimulation:** a 2022 meta-analysis of 18 randomised controlled trials
+  (774 people with Parkinson's) found RAS improved stride length and gait speed and reduced
+  freezing compared with controls. Ye et al., _Frontiers in Neurology_ 13:940419,
+  https://doi.org/10.3389/fneur.2022.940419 (checked against the abstract).
+- **Freeze index:** power at 3–8 Hz ÷ power at 0.5–3 Hz. Moore, MacDougall, Ondo, _J.
+  Neurosci. Methods_ 167(2):340–348, 2008 (definition checked against the abstract).
+- **Daphnet:** 10 patients, 237 freezes; Bächlin et al. 2010 report 73.1% sensitivity and
+  81.6% specificity online (checked against the preprint shipped with the dataset).
+- **Cue tempo:** studies range from below to roughly 5–25% above preferred cadence, with no
+  single best value. _To verify._ We default to +5% and cap the demo at 100 BPM (our choice).
 
 ## Limitations
 
-_Being written._
+- Not a medical device; not tested with people with Parkinson's or physiotherapists.
+- A pocket phone is not an ankle sensor: freeze detection from the phone is experimental and
+  gives many false alarms (see [docs/daphnet-evaluation.md](docs/daphnet-evaluation.md)).
+- Step detection is tuned on simulated walks and a few real ones; shuffling gait and walking
+  aids are untested.
+- The music plays on the laptop for the demo; real use needs it on the phone with wired
+  headphones.
 
 ## Credits and licences
 

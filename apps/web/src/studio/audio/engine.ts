@@ -17,8 +17,11 @@
  * the arranger (music/arranger.ts) decides which layers should be playing.
  */
 import * as Tone from 'tone';
-import { Store } from '../../shared/store';
 import { createBand, type Band } from '../music/band';
+import { Store, loadJSON, saveJSON } from '../../shared/store';
+
+/** The Studio volume is remembered on this laptop. */
+const VOLUME_KEY = 'footnotes.studio.volume.v1';
 
 export interface Beat {
   /** performance.now() time the beat is heard, ms. */
@@ -56,7 +59,7 @@ class AudioEngine {
     status: 'off',
     playing: false,
     tempo: 100,
-    volumeDb: -6,
+    volumeDb: loadJSON(VOLUME_KEY, { db: -6 }).db,
   });
   /** Recent and just-scheduled beats, oldest first. */
   readonly beats: Beat[] = [];
@@ -150,6 +153,7 @@ class AudioEngine {
   setVolume(db: number) {
     if (this.built) this.master.volume.rampTo(db, 0.2);
     this.state.set({ volumeDb: db });
+    saveJSON(VOLUME_KEY, { db });
   }
 
   /** Current beat period in ms (follows ramps). */
