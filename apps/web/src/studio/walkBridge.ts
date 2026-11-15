@@ -76,6 +76,7 @@ export function startWalkBridge(link: StudioLink) {
           session.cancelCalibration();
           break;
         case 'startBeat':
+          stepBus.setMode('live'); // the phone is driving: use its steps
           if (session.state.get().phase !== 'ready') session.useFixedTempo(FALLBACK_TEMPO);
           if (!audio.state.get().playing) session.startBeat();
           break;

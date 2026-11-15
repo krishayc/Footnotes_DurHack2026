@@ -137,6 +137,7 @@ export function StudioPage() {
         </div>
       </header>
       <StageBanner />
+      <IgnoredPhoneNotice />
 
       <main className="studio__body">
         <section className="studio__stage" aria-label="The score, live">
@@ -260,6 +261,29 @@ export function StudioPage() {
       {guide && <DemoGuide onClose={() => setGuide(false)} onHood={() => setHood(true)} />}
       {about && <AboutPanel onClose={closeAbout} />}
       {hood && <UnderTheHood link={link} snap={snap} stats={stats} onClose={closeHood} />}
+    </div>
+  );
+}
+
+/** The phone is sending steps but the laptop is using Tap mode or the Simulated walker. */
+function IgnoredPhoneNotice() {
+  const { at } = useStore(stepBus.ignoredPhone);
+  const { mode } = useStore(stepBus.settings);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => tick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  if (mode === 'live' || at === null || performance.now() - at > 5000) return null;
+  return (
+    <div className="notice" role="alert">
+      <span>
+        The phone is sending steps, but the laptop is using{' '}
+        {mode === 'tap' ? 'Tap mode' : 'the Simulated walker'}, so they aren&apos;t shown.
+      </span>
+      <button type="button" className="modebar__btn" onClick={() => stepBus.setMode('live')}>
+        Use the phone&apos;s steps
+      </button>
     </div>
   );
 }

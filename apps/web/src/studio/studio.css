@@ -869,3 +869,13 @@
   flex-wrap: wrap;
   gap: var(--s-2);
 }
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+  padding: var(--s-3) var(--s-7);
+  background: #2a2614;
+  border-bottom: 2px solid var(--c-highlight);
+  font-weight: 700;
+}

@@ -53,6 +53,8 @@ class StepBus {
   readonly recent: BusStep[] = [];
   /** Steps since the page opened. */
   total = 0;
+  /** When the phone last sent a step that we ignored (not in Live phone mode). */
+  readonly ignoredPhone = new Store<{ at: number | null }>({ at: null });
   private listeners = new Set<(s: BusStep) => void>();
   private simTimer: number | undefined;
   private simNext = 0;
@@ -79,8 +81,15 @@ class StepBus {
   attachLink(link: StudioLink) {
     this.detachLink?.();
     this.detachLink = link.onStep((s) => {
-      if (this.settings.get().mode !== 'live') return;
-      const t = link.toLocal(s.phoneT) ?? s.receivedAt - FALLBACK_LATENCY_MS;
+      if (this.settings.get().mode !== 'live') {
+        this.ignoredPhone.set({ at: performance.now() });
+        return;
+      }
+      // Clock sync gives the exact time; if it's missing or clearly off (just after the phone
+      // page reloaded), use the arrival time so the step still lands near "now" on screen.
+      const synced = link.toLocal(s.phoneT);
+      const fallback = s.receivedAt - FALLBACK_LATENCY_MS;
+      const t = synced !== null && Math.abs(synced - fallback) < 3000 ? synced : fallback;
       this.emit({ t, inferred: s.inferred, source: 'live' });
     });
     return () => {
