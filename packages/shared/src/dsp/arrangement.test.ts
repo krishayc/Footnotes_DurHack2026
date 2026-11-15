@@ -7,7 +7,7 @@ test('every remove threshold is below its add threshold', () => {
 });
 
 test('no flicker when the score hovers around a threshold', () => {
-  let level = 2; // Shakers + Bass playing
+  let level = 2; // Bongos + Bass playing
   const seen = new Set<number>();
   for (const score of [0.44, 0.46, 0.43, 0.47, 0.44, 0.46]) {
     level = stepLevel(level, targetLevel(score, level));

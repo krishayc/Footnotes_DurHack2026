@@ -57,7 +57,7 @@ const STEPS: Step[] = [
     from: 60,
     to: 105,
     title: 'The bloom',
-    say: 'Now walk to the beat. It’s set just above your own pace. As your steps lock in, instruments join: shakers, bass, piano, melody.',
+    say: 'Now walk to the beat. It’s set just above your own pace. As your steps lock in, instruments join: bongos, bass, guitar, then a flute tune and guitar fills.',
     doText: 'Judge presses Start the main walk. Point at the in-step % and the score filling up.',
     action: { label: 'Start the beat (laptop)', run: () => session.startBeat() },
     fallback: {

@@ -1,17 +1,17 @@
 /**
- * The instruments. All synthesised with Tone.js (no sample files): fully offline, no licences,
- * nothing to download, and every sound shaped to be soft and warm. No harsh synth defaults:
- * each voice is filtered, enveloped and levelled by hand.
+ * The instruments: a small, warm early-60s ballad band, all synthesised with Tone.js (no
+ * sample files: fully offline, no licences, nothing to download). Every voice is filtered,
+ * enveloped and levelled by hand so nothing sounds harsh.
  *
- *   L0 Pulse    soft D thump + gentle tick          (always on, loudest timing reference)
- *   L1 Shakers  filtered noise on the eighths
- *   L2 Bass     round triangle bass, lightly saturated so laptop speakers can carry it
- *   L3 Keys     electric-piano style FM chords, light chorus
- *   L4 Melody   soft bell-like FM lead with a little echo
- *   L5 Sparkle  quiet high arpeggio with a ping-pong echo
- *   Recovery    a soft marimba-like motif ON the beat (D F# A F# | E G A -), used only
- *               while a freeze is detected: the same calm figure every time, so it is
- *               recognisable, and it marks every beat to help the next step start.
+ *   L0 Pulse        soft low thump + gentle tick          (always on, the timing reference)
+ *   L1 Bongos       soft high/low bongos in a Latin lilt, with a light shaker
+ *   L2 Bass         round, plucky upright-style bass
+ *   L3 Guitar       nylon-string guitar, fingerpicked chords (plucked-string synthesis)
+ *   L4 Flute        a breathy, gently vibrato flute carrying the tune
+ *   L5 Guitar fills little guitar runs leading into the next bar
+ *   Recovery        a soft marimba-like motif ON the beat (F A C A | G Bb C -), used only
+ *                   while a freeze is detected: the same calm figure every time, so it is
+ *                   recognisable, and it marks every beat to help the next step start.
  *
  * Each layer goes through its own "fader" (a gain from 0 to 1). The arranger fades layers in
  * and out on bar lines; the notes themselves keep playing silently underneath, so a layer
@@ -19,12 +19,14 @@
  */
 import * as Tone from 'tone';
 import {
+  BONGO_PATTERN,
   SHAKER_VEL,
   bassBar,
   chordForBar,
-  keysBar,
+  fillBar,
+  guitarBar,
   melodyBar,
-  sparkleBar,
+  nextChord,
   type NoteEvent,
 } from './theory';
 
@@ -46,26 +48,31 @@ export interface Band {
   dispose(): void;
 }
 
-export const LAYER_NAMES = ['Shakers', 'Bass', 'Keys', 'Melody', 'Sparkle'] as const;
+export const LAYER_NAMES = ['Bongos', 'Bass', 'Guitar', 'Flute', 'Guitar fills'] as const;
 const FADE_IN_S = 0.25;
 const FADE_OUT_S = 1.0;
 
-/** Mixer levels (dB), balanced by measuring each layer's loudness (see measureMix). */
+/**
+ * Mixer levels (dB), balanced by measuring each layer offline (see measureMix). Plucked
+ * parts (guitar, fills, bongos) are short and spiky, so they're balanced by their peaks;
+ * sustained parts (bass, flute) by their average loudness.
+ */
 export const LEVELS = {
   kick: -2,
-  tick: -22,
-  shakers: -7,
-  bass: -17,
-  keys: -9,
-  melody: -5,
-  sparkle: -17,
+  tick: -24,
+  bongos: -5,
+  shaker: -16,
+  bass: -13,
+  guitar: 2,
+  flute: -14,
+  fills: 6,
   recovery: -8,
 };
 
 /** The recovery motif: one note per beat, two bars (index = bar % 2, beat). null = rest. */
 export const RECOVERY_MOTIF: (string | null)[][] = [
-  ['D5', 'F#5', 'A5', 'F#5'],
-  ['E5', 'G5', 'A5', null],
+  ['F5', 'A5', 'C6', 'A5'],
+  ['G5', 'Bb5', 'C6', null],
 ];
 /** Index used for recovery notes in the visual score. */
 export const RECOVERY_LAYER = 5;
@@ -86,31 +93,13 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
   const midiOf = (note: string) => Tone.Frequency(note).toMidi();
   const nodes: { dispose(): unknown }[] = [];
   const keep = <T extends { dispose(): unknown }>(n: T) => (nodes.push(n), n);
+  const human = () => 0.92 + Math.random() * 0.08; // tiny velocity variation: played, not stamped
 
   // Shared reverb as a "send": wet layers feed a little of their signal into it.
-  const reverb = keep(new Tone.Reverb({ decay: 2.8, preDelay: 0.02, wet: 1 })).connect(destination);
+  const reverb = keep(new Tone.Reverb({ decay: 2.6, preDelay: 0.025, wet: 1 })).connect(
+    destination,
+  );
   const reverbSend = (amount: number) => keep(new Tone.Gain(amount)).connect(reverb);
-
-  // ---------- L0 pulse ----------
-  const kick = keep(
-    new Tone.MembraneSynth({
-      pitchDecay: 0.035,
-      octaves: 2.5,
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.002, decay: 0.42, sustain: 0, release: 0.2 },
-      volume: LEVELS.kick,
-    }),
-  );
-  kick.chain(keep(new Tone.Filter({ frequency: 900, type: 'lowpass', rolloff: -24 })), destination);
-  const tick = keep(
-    new Tone.NoiseSynth({
-      noise: { type: 'pink' },
-      envelope: { attack: 0.001, decay: 0.035, sustain: 0, release: 0.02 },
-      volume: LEVELS.tick,
-    }),
-  );
-  tick.chain(keep(new Tone.Filter({ frequency: 2600, type: 'bandpass', Q: 1.2 })), destination);
-
   const fader = (wet: number) => {
     const g = keep(new Tone.Gain(0)).connect(destination);
     if (wet > 0) g.connect(reverbSend(wet));
@@ -128,105 +117,157 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
   ) => {
     for (const [s, note, len, vel] of events) {
       if (s !== slot) continue;
-      // Tiny velocity variation so repeated notes sound played, not stamped.
-      const v = vel * (0.93 + Math.random() * 0.07);
+      const v = vel * human();
       const dur = len * slotSec * 0.95;
       trigger(note, dur, time, v);
       onNote?.(layer, midiOf(note), time, dur, v, audible[layer]);
     }
   };
 
-  // ---------- L1 shakers ----------
-  const shakerFader = fader(0.05);
+  /**
+   * A pool of plucked strings (Karplus-Strong), each with its own volume, so chords can ring
+   * together and every pluck can have its own loudness.
+   */
+  const strings = (count: number, opts: Partial<Tone.PluckSynthOptions>, out: Tone.InputNode) => {
+    const pool = Array.from({ length: count }, () => {
+      const gain = keep(new Tone.Gain(0.8)).connect(out);
+      const synth = keep(new Tone.PluckSynth(opts)).connect(gain);
+      return { synth, gain };
+    });
+    let next = 0;
+    return (note: string, t: number, vel: number) => {
+      const v = pool[next];
+      next = (next + 1) % pool.length;
+      v.gain.gain.setValueAtTime(vel, t);
+      v.synth.triggerAttack(note, t);
+    };
+  };
+
+  // ---------- L0 pulse ----------
+  const kick = keep(
+    new Tone.MembraneSynth({
+      pitchDecay: 0.035,
+      octaves: 2.5,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.002, decay: 0.42, sustain: 0, release: 0.2 },
+      volume: LEVELS.kick,
+    }),
+  );
+  kick.chain(keep(new Tone.Filter({ frequency: 900, type: 'lowpass', rolloff: -24 })), destination);
+  const tick = keep(
+    new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.02 },
+      volume: LEVELS.tick,
+    }),
+  );
+  tick.chain(keep(new Tone.Filter({ frequency: 2400, type: 'bandpass', Q: 1.2 })), destination);
+
+  // ---------- L1 bongos + shaker ----------
+  const bongoFader = fader(0.12);
+  const bongoOut = keep(new Tone.Filter({ frequency: 2600, type: 'lowpass' })).connect(bongoFader);
+  const bongo = (pan: number) =>
+    keep(
+      new Tone.MembraneSynth({
+        pitchDecay: 0.012,
+        octaves: 1.6,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.16, sustain: 0, release: 0.08 },
+        volume: LEVELS.bongos,
+      }),
+    ).chain(keep(new Tone.Panner(pan)), bongoOut);
+  const bongoHigh = bongo(0.3);
+  const bongoLow = bongo(0.2);
   const shaker = keep(
     new Tone.NoiseSynth({
       noise: { type: 'white' },
-      envelope: { attack: 0.004, decay: 0.055, sustain: 0, release: 0.03 },
-      volume: LEVELS.shakers,
+      envelope: { attack: 0.004, decay: 0.05, sustain: 0, release: 0.03 },
+      volume: LEVELS.shaker,
     }),
   );
   shaker.chain(
-    keep(new Tone.Filter({ frequency: 5500, type: 'highpass' })),
-    keep(new Tone.Filter({ frequency: 9000, type: 'lowpass' })),
-    keep(new Tone.Panner(0.25)),
-    shakerFader,
+    keep(new Tone.Filter({ frequency: 6000, type: 'highpass' })),
+    keep(new Tone.Filter({ frequency: 9500, type: 'lowpass' })),
+    keep(new Tone.Panner(-0.3)),
+    bongoFader,
   );
 
   // ---------- L2 bass ----------
-  const bassFader = fader(0);
+  const bassFader = fader(0.04);
   const bass = keep(
     new Tone.MonoSynth({
       oscillator: { type: 'triangle' },
-      envelope: { attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.25 },
-      filter: { type: 'lowpass', Q: 1, rolloff: -24 },
+      envelope: { attack: 0.008, decay: 0.5, sustain: 0.25, release: 0.3 },
+      filter: { type: 'lowpass', Q: 0.8, rolloff: -24 },
       filterEnvelope: {
-        attack: 0.005,
-        decay: 0.25,
-        sustain: 0.45,
-        release: 0.4,
-        baseFrequency: 140,
-        octaves: 2.4,
+        attack: 0.004,
+        decay: 0.18,
+        sustain: 0.35,
+        release: 0.3,
+        baseFrequency: 130,
+        octaves: 2.2,
       },
       volume: LEVELS.bass,
     }),
   );
   // Gentle saturation adds overtones so the bass line is audible on small speakers.
-  const bassDrive = keep(new Tone.Chebyshev({ order: 2, wet: 0.25 }));
-  bass.chain(bassDrive, keep(new Tone.Filter({ frequency: 1400, type: 'lowpass' })), bassFader);
+  const bassDrive = keep(new Tone.Chebyshev({ order: 2, wet: 0.2 }));
+  bass.chain(bassDrive, keep(new Tone.Filter({ frequency: 1200, type: 'lowpass' })), bassFader);
 
-  // ---------- L3 keys ----------
-  const keysFader = fader(0.3);
-  const keys = keep(
-    new Tone.PolySynth(Tone.FMSynth, {
-      harmonicity: 1,
-      modulationIndex: 2.5,
+  // ---------- L3 nylon guitar ----------
+  const guitarFader = fader(0.22);
+  const guitarBus = keep(new Tone.Volume(LEVELS.guitar));
+  guitarBus.chain(
+    keep(new Tone.Filter({ frequency: 2800, type: 'lowpass', rolloff: -12 })),
+    keep(new Tone.Panner(-0.2)),
+    guitarFader,
+  );
+  const guitar = strings(
+    12,
+    { attackNoise: 0.8, dampening: 3400, resonance: 0.94, release: 1 },
+    guitarBus,
+  );
+
+  // ---------- L4 flute ----------
+  const fluteFader = fader(0.35);
+  const flute = keep(
+    new Tone.Synth({
       oscillator: { type: 'sine' },
-      modulation: { type: 'sine' },
-      envelope: { attack: 0.005, decay: 1.4, sustain: 0.25, release: 1.2 },
-      modulationEnvelope: { attack: 0.002, decay: 0.45, sustain: 0.1, release: 0.6 },
-      volume: LEVELS.keys,
+      envelope: { attack: 0.07, decay: 0.2, sustain: 0.85, release: 0.5 },
+      volume: LEVELS.flute,
     }),
   );
-  keys.maxPolyphony = 16;
-  keys.chain(
-    keep(new Tone.Chorus({ frequency: 1.2, delayTime: 3, depth: 0.35, wet: 0.35 }).start()),
-    keep(new Tone.Filter({ frequency: 3800, type: 'lowpass' })),
-    keep(new Tone.Panner(-0.15)),
-    keysFader,
+  // A touch of breath noise that follows the flute's notes.
+  const breath = keep(
+    new Tone.NoiseSynth({
+      noise: { type: 'pink' },
+      envelope: { attack: 0.05, decay: 0.15, sustain: 0.15, release: 0.3 },
+      volume: LEVELS.flute - 22,
+    }),
   );
+  const fluteTone = keep(new Tone.Filter({ frequency: 3500, type: 'lowpass' }));
+  flute.chain(
+    keep(new Tone.Vibrato({ frequency: 4.8, depth: 0.06 })),
+    fluteTone,
+    keep(new Tone.FeedbackDelay({ delayTime: '4n.', feedback: 0.18, wet: 0.12 })),
+    keep(new Tone.Panner(0.15)),
+    fluteFader,
+  );
+  breath.chain(keep(new Tone.Filter({ frequency: 2500, type: 'bandpass', Q: 0.8 })), fluteFader);
 
-  // ---------- L4 melody ----------
-  const melodyFader = fader(0.25);
-  const melody = keep(
-    new Tone.FMSynth({
-      harmonicity: 2,
-      modulationIndex: 1.5,
-      oscillator: { type: 'sine' },
-      modulation: { type: 'triangle' },
-      envelope: { attack: 0.01, decay: 0.7, sustain: 0.3, release: 0.9 },
-      modulationEnvelope: { attack: 0.01, decay: 0.25, sustain: 0.15, release: 0.5 },
-      volume: LEVELS.melody,
-    }),
+  // ---------- L5 guitar fills ----------
+  const fillFader = fader(0.3);
+  const fillBus = keep(new Tone.Volume(LEVELS.fills));
+  fillBus.chain(
+    keep(new Tone.Filter({ frequency: 3200, type: 'lowpass' })),
+    keep(new Tone.FeedbackDelay({ delayTime: '8n.', feedback: 0.2, wet: 0.18 })),
+    keep(new Tone.Panner(0.3)),
+    fillFader,
   );
-  melody.chain(
-    keep(new Tone.FeedbackDelay({ delayTime: '4n.', feedback: 0.2, wet: 0.15 })),
-    keep(new Tone.Panner(0.1)),
-    melodyFader,
-  );
-
-  // ---------- L5 sparkle ----------
-  const sparkleFader = fader(0.35);
-  const sparkle = keep(
-    new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.005, decay: 0.25, sustain: 0, release: 0.3 },
-      volume: LEVELS.sparkle,
-    }),
-  );
-  sparkle.chain(
-    keep(new Tone.PingPongDelay({ delayTime: '8n.', feedback: 0.3, wet: 0.3 })),
-    keep(new Tone.Filter({ frequency: 500, type: 'highpass' })),
-    sparkleFader,
+  const fillStrings = strings(
+    4,
+    { attackNoise: 0.6, dampening: 4200, resonance: 0.93, release: 0.8 },
+    fillBus,
   );
 
   // ---------- Recovery motif ----------
@@ -262,10 +303,13 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
     {
       id: 1,
       name: LAYER_NAMES[0],
-      fader: shakerFader,
+      fader: bongoFader,
       play: (time, _bar, slot, slotSec) => {
-        const v = SHAKER_VEL[slot] * (0.9 + Math.random() * 0.1);
-        shaker.triggerAttackRelease('32n', time, v);
+        const [drum, vel] = BONGO_PATTERN[slot];
+        const v = vel * human();
+        if (drum === 'h') bongoHigh.triggerAttackRelease('A4', '32n', time, v);
+        else bongoLow.triggerAttackRelease('E4', '32n', time, v);
+        shaker.triggerAttackRelease('32n', time, SHAKER_VEL[slot] * human());
         onNote?.(0, 0, time, slotSec * 0.3, v, audible[0]);
       },
     },
@@ -274,42 +318,52 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
       name: LAYER_NAMES[1],
       fader: bassFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(1, bassBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
-          bass.triggerAttackRelease(n, d, t, v),
+        playEvents(
+          1,
+          bassBar(chordForBar(bar), nextChord(bar)),
+          slot,
+          slotSec,
+          time,
+          (n, d, t, v) => bass.triggerAttackRelease(n, d, t, v),
         ),
     },
     {
       id: 3,
       name: LAYER_NAMES[2],
-      fader: keysFader,
-      play: (time, bar, slot, slotSec) =>
-        playEvents(2, keysBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
-          keys.triggerAttackRelease(n, d, t, v),
-        ),
+      fader: guitarFader,
+      play: (time, bar, slot, slotSec) => {
+        // Strum: the notes of a chord land a few milliseconds apart, low to high.
+        let k = 0;
+        playEvents(2, guitarBar(chordForBar(bar)), slot, slotSec, time, (n, _d, t, v) => {
+          guitar(n, t + 0.018 * k, v);
+          k++;
+        });
+      },
     },
     {
       id: 4,
       name: LAYER_NAMES[3],
-      fader: melodyFader,
+      fader: fluteFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(3, melodyBar(bar), slot, slotSec, time, (n, d, t, v) =>
-          melody.triggerAttackRelease(n, d, t, v),
-        ),
+        playEvents(3, melodyBar(bar), slot, slotSec, time, (n, d, t, v) => {
+          flute.triggerAttackRelease(n, d, t, v);
+          breath.triggerAttackRelease(Math.min(d, 0.4), t, v * 0.6);
+        }),
     },
     {
       id: 5,
       name: LAYER_NAMES[4],
-      fader: sparkleFader,
+      fader: fillFader,
       play: (time, bar, slot, slotSec) =>
-        playEvents(4, sparkleBar(chordForBar(bar)), slot, slotSec, time, (n, d, t, v) =>
-          sparkle.triggerAttackRelease(n, d, t, v),
+        playEvents(4, fillBar(chordForBar(bar), bar), slot, slotSec, time, (n, _d, t, v) =>
+          fillStrings(n, t, v),
         ),
     },
   ];
 
   return {
     playPulse(time, beatInBar) {
-      kick.triggerAttackRelease('D2', '8n', time, beatInBar === 0 ? 1 : 0.85);
+      kick.triggerAttackRelease('F2', '8n', time, beatInBar === 0 ? 1 : 0.85);
       tick.triggerAttackRelease('32n', time, beatInBar === 0 ? 1 : 0.55);
     },
     layers,

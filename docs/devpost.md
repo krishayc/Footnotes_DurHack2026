@@ -41,7 +41,8 @@ to. DurHack's theme was Composition, so we let the walker compose the music.
   about 1 ms through the tunnel, so steps can be compared with the beat to the millisecond.
 - **"In step" score**: each step's phase against the nearest beat, then circular statistics
   (the mean resultant length R) over the last 8 steps, a tempo-match factor, and smoothing.
-- **Music**: fully synthesised with Tone.js in D major (Dmaj7, Bm7, Gmaj7, A7sus4); levels
+- **Music**: an original early-60s style ballad, fully synthesised with Tone.js in F major
+  (nylon guitar by plucked-string synthesis, bongos, upright-style bass, flute); levels
   balanced by measuring each layer offline; layers enter and leave on bar lines with fades,
   with hysteresis so the arrangement never flickers.
 - **Freeze detection**: the freeze index (power at 3–8 Hz ÷ power at 0.5–3 Hz, Moore et al.

@@ -23,7 +23,7 @@ import { chime, playNotes, speak } from './voice';
 import { finishWalk, isPaused, startWalk, walkSeconds } from './walkSession';
 import { buzz } from '../shared/haptic';
 
-const ALL_LAYERS = ['Shakers', 'Bass', 'Keys', 'Melody', 'Sparkle'];
+const ALL_LAYERS = ['Bongos', 'Bass', 'Guitar', 'Flute', 'Guitar fills'];
 const DIM_AFTER_MS = 90_000;
 
 // ---------------------------------------------------------------- Walking
@@ -245,7 +245,7 @@ export function EndConfirm({ go }: { go: Go }) {
 
 // ---------------------------------------------------------------- After the walk
 
-const PENTA = [293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25, 739.99]; // D major pentatonic
+const PENTA = [349.23, 392.0, 440, 523.25, 587.33, 698.46, 783.99, 880]; // F major pentatonic (the Studio's key)
 
 export function After({ go, id }: { go: Go; id?: string }) {
   const { list } = useStore(walks);

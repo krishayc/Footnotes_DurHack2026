@@ -149,11 +149,15 @@ simulated walks; a real pocket walk is still the test that matters.
 
 ## The music (adaptive arrangement)
 
-- **Fixed key and chords:** D major, a 4-bar loop **Dmaj7 → Bm7 → Gmaj7 → A7sus4** (the
-  I–vi–IV–V shape softened with 7ths). The harmony never changes; only the layers do.
-- **Layers:** L0 Pulse (always on, the loudest timing reference), L1 Shakers, L2 Bass,
-  L3 Keys (electric-piano style), L4 Melody (a 4-bar pentatonic motif with an answering
-  variation), L5 Sparkle (a quiet high arpeggio).
+- **An original early-60s style ballad** (soft Latin feel, nylon guitar, bongos, a tender
+  tune). Our own tune and arrangement, not a cover of any song.
+- **Fixed key and chords:** F major, an 8-bar loop **Fmaj7 → Dm7 → Gm7 → C7 → Fmaj7 → F7 →
+  Bbmaj7 → Bbm6** (a classic turnaround, then the tender "minor iv" back home). The harmony
+  never changes; only the layers do.
+- **Layers:** L0 Pulse (always on, the loudest timing reference), L1 Bongos (with a light
+  shaker), L2 Bass (round upright style), L3 Guitar (nylon-string, fingerpicked chords via
+  plucked-string synthesis), L4 Flute (the 8-bar tune, with a variation every other time
+  round), L5 Guitar fills (little runs into the next bar).
 - **All synthesised in code** with Tone.js: works offline, no sample licences, nothing extra to
   download. Each voice is filtered and enveloped to be soft; a shared reverb, compressor and
   limiter glue the mix and stop any harsh peak.
@@ -206,7 +210,7 @@ faster/slower) and the laptop reports back the phase, beat, score and layers.
   original paper), sensors higher up do worse, and **all of them give far too many false
   alarms for daily life** (about 115+ an hour in this freeze-provoking lab data).
 - **Recovery mode:** on the next beat after a freeze is flagged, every layer fades out and a
-  calm, recognisable motif (D F♯ A F♯ | E G A) plays on every beat over the unchanged pulse.
+  calm, recognisable motif (F A C A | G B♭ C) plays on every beat over the unchanged pulse.
   No tempo change, no volume jump. When the freeze ends, the motif finishes its bar and the
   music rebuilds one layer per bar. The score turns a calm blue; the phone says "Take your
   time. Listen for the beat, then take a big step."
