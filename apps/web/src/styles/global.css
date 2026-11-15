@@ -27,10 +27,11 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
+  font-variation-settings: 'SOFT' 100;
   line-height: var(--lh-tight);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 h1 {
   font-size: var(--fs-h1);
@@ -71,11 +72,56 @@ input {
   white-space: nowrap;
 }
 
+/* Paper grain over everything: makes flat colour feel like printed paper, not a screen. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background-image: var(--grain);
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+}
+
 /* Dark surfaces (Studio, Walking screen). */
 .theme-dark {
-  background: var(--d-bg-0);
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(242, 181, 68, 0.06), transparent 60%),
+    radial-gradient(900px 600px at 110% 110%, rgba(127, 209, 168, 0.05), transparent 60%),
+    var(--d-bg-0);
   color: var(--d-text);
   min-height: 100dvh;
+}
+.theme-dark::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background-image: var(--grain);
+  opacity: 0.09;
+  mix-blend-mode: screen;
+}
+
+/* Serif accents: italic for warmth (e.g. "lovely walk."). */
+.serif {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+}
+.serif-i {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-variation-settings: 'SOFT' 100;
+}
+
+/* A hand-drawn underline under a word. */
+.scribble {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M2 7 C 20 2, 40 9, 60 5 S 100 3, 118 6' fill='none' stroke='%23F2B544' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 0.32em;
+  background-position: 0 100%;
+  padding-bottom: 0.12em;
 }
 
 /* Gentle page entrance. Disabled automatically by reduced-motion tokens. */

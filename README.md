@@ -14,7 +14,6 @@ A phone in your pocket measures your steps. Footnotes plays a steady beat set ju
 natural walking pace (Rhythmic Auditory Stimulation, RAS). **The beat always leads and never
 chases you.** What changes is the music built on top: lock into the beat and it blooms (bass,
 harmony, melody come in); drift and it strips back to a clear, simple beat that is easy to find
-again. If a freeze of gait is detected, the music switches to a calm, recognisable recovery cue.
 A live visual score on the laptop shows the walker and the music locking together.
 
 ## Status
@@ -97,7 +96,7 @@ apps/web/            Vite + React + TypeScript (routes: / , /sensor , /studio)
   src/sensor/        motion sensor, wake lock, step tracker, link to the laptop, developer screen
   src/shared/        WebSocket connection, stores, ring buffers, haptics
   src/studio/        laptop Studio: audio engine, band + arranger, sync, visual score, freeze
-                     watch, demo guide, About and research
+                     watch, demo guide
 apps/server/         Node + ws relay, static hosting, recordings endpoint
 packages/shared/     message protocol, room codes, clock sync, DSP (steps, calibration, sync,
                      arrangement, freeze index) + tests, used by web, server and scripts
@@ -182,29 +181,31 @@ simulated walks; a real pocket walk is still the test that matters.
 each layer is a lane that appears only while it plays and is drawn from the actual notes
 (melody and keys as flowing lines, bass as a stepped line, shakers as dots, sparkle as
 twinkles), above a steps lane where the beat is shown as marigold bars and each step as a dot
-placed by its timing. Beside it: the in-step percentage in plain words, pace, beat, layers and
-freeze watch. **Under the hood** (button or **H**) opens the technical view: raw phone signal,
-the phase circle and R, clock sync and latency, how the phone counts, and music debug.
+placed by its timing. Beside it, set as plain typography rather than boxes: how in step the
+walker is (a big number and a hand-drawn line that fills), their pace and the beat, the
+instruments playing (as words), and the controls. **D** opens a hidden music debug panel.
 
 **Phone (the patient app).** Welcome (3 cards, first run) → Home → Step 1 _Let's find your
 pace_ (spoken 3-2-1 count-in, 20 s ring, chime) → Step 2 _Your beat is ready_ (a circle that
 pulses exactly on the laptop's beat, using the clock sync) → **Walking** (dark, the whole
 screen is a press-and-hold stop target; taps and pocket bumps are ignored) → _End your walk?_
 → **After the walk** (the walk drawn as music on five staff lines, plain-words summary,
-_Hear my walk_, _Send to physio_) plus **My walks** and **Settings** (beat offset, voice
+and a Done button) plus **My walks** and **Settings** (beat offset, voice
 guidance, text size, hold-to-stop time). Every screen has a read-aloud button; buttons are 84
 to 128 px, debounced against tremor; no swipes or small targets; reduced motion respected.
 The hidden **developer screen** (tap the version in Settings 5 times) keeps the signal graph,
 step tuning and walk recording. The phone drives the laptop (find my pace, start/stop, a bit
 faster/slower) and the laptop reports back the phase, beat, score and layers.
 
-## Freeze detection (and the Daphnet test)
+## Freeze detection research (not in the app)
+
+We explored freeze-of-gait detection and tested it on real patient data, but took it out of
+the app: from a pocket phone it gave far too many false alarms to be useful.
 
 - **Freeze index** (Moore et al. 2008): power at 3–8 Hz (trembling) ÷ power at 0.5–3 Hz
   (walking), over a 4 s window every 0.5 s, plus a minimum movement power so standing still
   isn't a freeze. One shared implementation
-  ([packages/shared/src/dsp/freeze.ts](packages/shared/src/dsp/freeze.ts)) runs in the
-  evaluation and the live phone watch.
+  ([packages/shared/src/dsp/freeze.ts](packages/shared/src/dsp/freeze.ts)).
 - **Tested on real patients:** `npm run daphnet` runs it on the whole Daphnet dataset (10
   patients, 237 annotated freezes) for the ankle, thigh and hip sensors, picks thresholds and,
   to be fair, re-tests with each patient left out. Full results:
@@ -212,25 +213,14 @@ faster/slower) and the laptop reports back the phase, beat, score and layers.
   (about 86% of freeze time flagged, 77% of normal time left alone, comparable with the
   original paper), sensors higher up do worse, and **all of them give far too many false
   alarms for daily life** (about 115+ an hour in this freeze-provoking lab data).
-- **Recovery mode:** on the next beat after a freeze is flagged, every layer fades out and a
-  calm, recognisable motif (D F♯ A F♯ | E G A) plays on every beat over the unchanged pulse.
-  No tempo change, no volume jump. When the freeze ends, the motif finishes its bar and the
-  music rebuilds one layer per bar. The score turns a calm blue; the phone says "Take your
-  time. Listen for the beat, then take a big step."
-- **Live phone freeze index is experimental** and only shown by default (a tick-box lets it
-  change the music). In the demo, **Simulate freeze** shows the recovery music.
 
 ## Demo day
 
 - **Demo guide** (Studio button, or **G**): the 3-minute judge script one step at a time, with
   a clock, the words to say, and a button for each step's action and its no-phone fallback
-  (simulated walker, Simulate freeze). Tested end to end with only the fallbacks: calibration
-  (92 steps/min → 97 BPM beat), bloom, drift back to the pulse, a simulated freeze, Under
-  the hood, with no console errors.
-- **About and research** (button, or **A**): what it is and isn't, sources (each checked
-  against its abstract, or marked "to verify"), and honest limits.
-- **Fallbacks:** Tap mode (spacebar or pad), Simulated walker, Simulate
-  freeze. A refresh mid-walk offers one click to bring the music back.
+  (simulated walker), on a cue card.
+- **Fallbacks:** Tap mode (spacebar or pad) and Simulated walker. A refresh mid-walk offers
+  one click to bring the music back.
 - **Offline:** no external requests at run time (fonts and music are bundled).
   With no internet the Cloudflare tunnel can't run: put laptop and phone on a phone hotspot and
   use `npm run dev:https` (see [docs/https-setup.md](docs/https-setup.md)). The laptop alone
@@ -252,6 +242,10 @@ Measured against the known truth with `npm run fake-phone`: **0.2 ms error on lo
 about 1 ms through a Cloudflare tunnel** with 40 to 80 ms round trips.
 
 ## Design
+
+**Look:** warm and printed rather than "app-like": paper grain, hairlines instead of boxes,
+**Fraunces** (a soft serif, bundled) for headings, numbers and italic labels, a hand-drawn
+marigold underline for emphasis, the QR code and demo guide as paper notes.
 
 Built for people with Parkinson's: huge touch targets (84px minimum, 128px hero), 600ms tap
 debounce against tremor, text never below 18px, 4.5:1+ contrast, never colour alone, calm

@@ -1,12 +1,11 @@
 /**
- * Demo guide (press G): walks the presenter through the 3-minute judge script, one step at a
+ * Demo guide (press G): a presenter's cue card for the 3-minute judge script, one step at a
  * time, with a running clock, what to say, what to do, and a button for each step's action
  * (and its fallback). It only drives the same controls a person could press.
  */
 import { useEffect, useState } from 'react';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
-import { freezeWatch } from './freeze';
 import { session } from './session';
 import { stepBus } from './steps';
 
@@ -85,26 +84,14 @@ const STEPS: Step[] = [
   },
   {
     from: 135,
-    to: 160,
-    title: 'A freeze',
-    say: 'Sometimes people with Parkinson’s freeze: the feet feel glued to the floor. When that happens, the music drops to the beat with a calm recovery tune on every beat, and rebuilds once they’re moving. The beat never changes.',
-    doText:
-      'Press Simulate freeze, let the recovery tune play for a few beats, then press End the freeze.',
-    action: {
-      label: 'Simulate freeze / end it',
-      run: () => freezeWatch.setSimulated(!freezeWatch.state.get().simulated),
-    },
-  },
-  {
-    from: 160,
     to: 180,
-    title: 'Under the hood',
-    say: 'Under the hood: step detection, clock sync between phone and laptop to the millisecond, circular statistics for the in-step score, and a freeze detector we tested on 237 real freezes from patients. Honestly: it works best at the ankle; from a pocket it’s experimental.',
-    doText: 'Open Under the hood. Finish on About and research if asked about evidence.',
+    title: 'How it works',
+    say: 'Under the music: the phone detects each step, the laptop and phone clocks are synced to the millisecond, and a score from circular statistics decides how many instruments play. The beat never chases you: only the music around it changes.',
+    doText: 'Hand back to the judges for questions.',
   },
 ];
 
-export function DemoGuide({ onClose, onHood }: { onClose: () => void; onHood: () => void }) {
+export function DemoGuide({ onClose }: { onClose: () => void }) {
   const [i, setI] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => performance.now());
@@ -118,12 +105,7 @@ export function DemoGuide({ onClose, onHood }: { onClose: () => void; onHood: ()
   const mmss = (x: number) =>
     `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, '0')}`;
   const late = startedAt !== null && el > s.to + 5;
-  const action =
-    i === 0 && a.status === 'on'
-      ? undefined
-      : i === STEPS.length - 1
-        ? { label: 'Open Under the hood', run: onHood }
-        : s.action;
+  const action = i === 0 && a.status === 'on' ? undefined : s.action;
 
   return (
     <aside className="guide" aria-labelledby="guide-h" aria-live="polite">

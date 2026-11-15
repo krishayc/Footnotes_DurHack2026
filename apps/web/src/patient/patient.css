@@ -436,3 +436,217 @@
   text-align: center;
   padding: 0 var(--s-4);
 }
+
+/* ===================================================================== */
+/* A warmer, more human look: no card boxes, paper and hairlines, serif  */
+/* headings, soft pills. Targets stay big (84px+) and text 18px+.        */
+/* ===================================================================== */
+
+.pt h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+}
+.pt .brand {
+  font-style: italic;
+  font-weight: 600;
+  font-variation-settings: 'SOFT' 100;
+}
+
+/* Cards become open sections on the paper, divided by a hairline. */
+.pt .card {
+  background: none;
+  border: 0;
+  border-top: 1.5px solid var(--c-paper-line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--s-5) 0 var(--s-2);
+}
+.pt--dark .card {
+  border-top-color: var(--d-line);
+}
+
+/* Quiet buttons: a soft tinted pill, no outline. Same size to tap. */
+.pt .btn--secondary {
+  background: rgba(30, 90, 76, 0.07);
+  border-color: transparent;
+  color: var(--c-ink);
+  border-radius: var(--r-pill);
+}
+.pt .btn--secondary:hover {
+  background: rgba(30, 90, 76, 0.12);
+}
+.pt--dark .btn--secondary {
+  background: rgba(241, 243, 238, 0.07);
+  color: var(--d-text);
+}
+.pt .btn--primary {
+  border-radius: var(--r-pill);
+}
+.pt .btn--hero {
+  border-radius: 40px;
+  box-shadow: 0 18px 36px -22px rgba(30, 90, 76, 0.9);
+}
+.pt .btn--hero .btn__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variation-settings: 'SOFT' 100;
+  font-size: 32px;
+}
+.pt__back {
+  border-radius: var(--r-pill) !important;
+}
+
+/* The read-aloud button: a soft round button. */
+.speak {
+  border-radius: 50%;
+  border: 0;
+  background: rgba(30, 90, 76, 0.08);
+}
+.speak--dark {
+  background: rgba(241, 243, 238, 0.08);
+}
+
+/* Small italic labels instead of bold grey ones. */
+.pt__lastlabel,
+.pt__crumb,
+.walk__chipslabel {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: 'SOFT' 100;
+  font-size: 20px;
+  color: var(--c-muted);
+}
+.pt--dark .walk__chipslabel,
+.walk .walk__chipslabel {
+  color: var(--d-muted);
+}
+.pt__lastline {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+  font-size: 22px;
+  line-height: 1.35;
+}
+.pt__last {
+  background: none;
+  border: 0;
+  padding: var(--s-5) 0 var(--s-2);
+}
+
+/* After the walk: the numbers as a typeset list, not a table in a box. */
+.pt__stats dt {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--c-muted);
+}
+.pt__stats dd {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+  font-weight: 600;
+}
+
+/* The walk drawn as music sits on a dark slip of paper, slightly tilted. */
+.pt__score {
+  transform: rotate(-0.6deg);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -26px rgba(15, 25, 22, 0.8);
+}
+
+/* Big numbers in the countdown and steps in the serif. */
+.pt__ringnum,
+.pt__countin {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+  font-weight: 600;
+}
+.pt__stepcard strong {
+  font-family: var(--font-display);
+  font-size: 1.3em;
+}
+
+/* "20 seconds done": a hand-made badge rather than a chip. */
+.pt__donebadge {
+  border-radius: 999px 999px 999px 6px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Walking screen: instruments as words with dots, like the Studio. */
+.walk .chips--walk .chip {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  gap: var(--s-2);
+  font-family: var(--font-display);
+  font-size: 21px;
+  color: #7f978e;
+}
+.walk .chips--walk .chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+.walk .chips--walk .chip--on {
+  color: var(--d-text);
+}
+.walk .chips--walk .chip--on::before {
+  background: var(--c-highlight);
+  border-color: var(--c-highlight);
+}
+.walk .chips--walk .chip--soon {
+  font-style: italic;
+  color: var(--d-muted);
+}
+.walk__status {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+  font-weight: 500;
+}
+.walk .chips--walk {
+  gap: var(--s-2) var(--s-5);
+}
+.pt__pair .btn {
+  white-space: nowrap;
+  gap: var(--s-3);
+  padding-inline: var(--s-4);
+}
+/* Warnings: a calm note with a marigold rule, not a wall of bold text. */
+.pt .pt__warn {
+  font-weight: 400;
+  font-size: var(--fs-min);
+  line-height: 1.45;
+  color: var(--c-ink);
+  border-left: 3px solid var(--c-highlight);
+  padding-left: var(--s-4);
+}
+.pt__warn--dark {
+  border-left: 0 !important;
+  padding-left: 0 !important;
+  color: var(--d-muted) !important;
+}
+.walk .chips--walk .chip {
+  align-items: center;
+  font-weight: 500;
+}
+.walk .chips--walk .chip::before {
+  flex: none;
+  align-self: center;
+}
+.walk__time {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-variation-settings: 'SOFT' 100;
+  font-size: 22px;
+}
+.walk .chips--walk .chip {
+  display: inline-flex;
+}
+.walk .chips--walk .chip::before {
+  display: inline-block;
+}

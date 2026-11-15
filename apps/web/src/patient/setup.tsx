@@ -113,7 +113,9 @@ export function Home({ go, link }: { go: Go; link: LinkSnapshot | null }) {
   return (
     <Screen speech={speech}>
       <section className="pt__intro">
-        <h1>{greeting()}</h1>
+        <h1>
+          Good <span className="scribble">{greeting().slice(5, -1)}</span>.
+        </h1>
         <p className="pt__lead">Ready for a walk? Pop your earphones in first.</p>
       </section>
 

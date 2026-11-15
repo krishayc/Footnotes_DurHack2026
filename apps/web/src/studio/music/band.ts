@@ -9,9 +9,6 @@
  *   L3 Keys     electric-piano style FM chords, light chorus
  *   L4 Melody   soft bell-like FM lead with a little echo
  *   L5 Sparkle  quiet high arpeggio with a ping-pong echo
- *   Recovery    a soft marimba-like motif ON the beat (D F# A F# | E G A -), used only
- *               while a freeze is detected: the same calm figure every time, so it is
- *               recognisable, and it marks every beat to help the next step start.
  *
  * Each layer goes through its own "fader" (a gain from 0 to 1). The arranger fades layers in
  * and out on bar lines; the notes themselves keep playing silently underneath, so a layer
@@ -39,9 +36,6 @@ export interface Layer {
 export interface Band {
   playPulse(time: number, beatInBar: number): void;
   layers: Layer[];
-  /** The freeze recovery motif (not one of the arranged layers). */
-  recovery: Layer;
-  setRecovery(on: boolean, time?: number): void;
   setLayer(index: number, on: boolean, time?: number): void;
   dispose(): void;
 }
@@ -59,16 +53,7 @@ export const LEVELS = {
   keys: -9,
   melody: -5,
   sparkle: -17,
-  recovery: -8,
 };
-
-/** The recovery motif: one note per beat, two bars (index = bar % 2, beat). null = rest. */
-export const RECOVERY_MOTIF: (string | null)[][] = [
-  ['D5', 'F#5', 'A5', 'F#5'],
-  ['E5', 'G5', 'A5', null],
-];
-/** Index used for recovery notes in the visual score. */
-export const RECOVERY_LAYER = 5;
 
 /** Called for every note a layer plays (audio time), so the visual score can draw it. */
 export type NoteHook = (
@@ -229,35 +214,6 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
     sparkleFader,
   );
 
-  // ---------- Recovery motif ----------
-  let recoveryOn = false;
-  const recoveryFader = fader(0.3);
-  const recoveryVoice = keep(
-    new Tone.FMSynth({
-      harmonicity: 3.01,
-      modulationIndex: 3,
-      oscillator: { type: 'sine' },
-      modulation: { type: 'sine' },
-      envelope: { attack: 0.004, decay: 0.9, sustain: 0, release: 0.6 },
-      modulationEnvelope: { attack: 0.002, decay: 0.15, sustain: 0, release: 0.2 },
-      volume: LEVELS.recovery,
-    }),
-  );
-  recoveryVoice.chain(keep(new Tone.Filter({ frequency: 3000, type: 'lowpass' })), recoveryFader);
-  const recovery: Layer = {
-    id: 6,
-    name: 'Recovery',
-    fader: recoveryFader,
-    play: (time, bar, slot, slotSec) => {
-      if (slot % 2 !== 0) return; // on the beat only
-      const note = RECOVERY_MOTIF[bar % 2][slot / 2];
-      if (!note) return;
-      const v = 0.8;
-      recoveryVoice.triggerAttackRelease(note, slotSec * 1.8, time, v);
-      onNote?.(RECOVERY_LAYER, midiOf(note), time, slotSec * 1.8, v, recoveryOn);
-    },
-  };
-
   const layers: Layer[] = [
     {
       id: 1,
@@ -313,15 +269,6 @@ export function createBand(destination: Tone.InputNode, onNote?: NoteHook): Band
       tick.triggerAttackRelease('32n', time, beatInBar === 0 ? 1 : 0.55);
     },
     layers,
-    recovery,
-    setRecovery(on, time = Tone.now()) {
-      recoveryOn = on;
-      const g = recoveryFader.gain;
-      g.cancelScheduledValues(time);
-      g.setValueAtTime(g.getValueAtTime(time), time);
-      // Gentle both ways: no sudden volume jumps.
-      g.linearRampToValueAtTime(on ? 1 : 0, time + (on ? 0.4 : 2.0));
-    },
     setLayer(index, on, time = Tone.now()) {
       audible[index] = on;
       const g = layers[index].fader.gain;

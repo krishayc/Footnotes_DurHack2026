@@ -20,8 +20,6 @@ to. DurHack's theme was Composition, so we let the walker compose the music.
 - **The beat always leads and never chases you.** What changes is the music on top: walk in
   time and shakers, bass, piano, melody and sparkle join in, one per bar; drift and it strips
   back to a clear pulse that's easy to find again.
-- **If a freeze is detected**, every layer fades and a calm, recognisable recovery tune plays
-  on the same beat; when walking resumes, the music rebuilds.
 - **A live visual score** on the laptop draws the walk and the music together: each
   instrument as its own lane drawn from the notes actually played, and each step as a dot
   placed by its timing against the beat.
@@ -44,10 +42,10 @@ to. DurHack's theme was Composition, so we let the walker compose the music.
 - **Music**: fully synthesised with Tone.js in D major (Dmaj7, Bm7, Gmaj7, A7sus4); levels
   balanced by measuring each layer offline; layers enter and leave on bar lines with fades,
   with hysteresis so the arrangement never flickers.
-- **Freeze detection**: the freeze index (power at 3–8 Hz ÷ power at 0.5–3 Hz, Moore et al.
-  2008), one shared implementation used by our evaluation and the live watch.
-- **Evaluation** on the Daphnet dataset (10 patients, 237 annotated freezes), with
-  leave-one-patient-out thresholds.
+- **Freeze detection research** (not in the final app): the freeze index (power at 3–8 Hz ÷
+  power at 0.5–3 Hz, Moore et al. 2008), evaluated on the Daphnet dataset (10 patients, 237
+  annotated freezes) with leave-one-patient-out thresholds. From a pocket phone it gave too
+  many false alarms, so we left it out.
 
 ## Challenges we ran into
 

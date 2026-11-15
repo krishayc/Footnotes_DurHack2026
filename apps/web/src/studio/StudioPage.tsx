@@ -1,28 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
-import { LAYER_COUNT, makeRoomCode } from '@footnotes/shared';
+import { useEffect, useState } from 'react';
+import { makeRoomCode } from '@footnotes/shared';
 import { LogoMark } from '../ui/Logo';
 import { JoinCard } from './JoinCard';
 import { useStudioLink, type StudioLinkSnapshot } from './link';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { ControlPanel } from './ControlPanel';
-import { InStepCard } from './SyncPanel';
+import { InStep } from './SyncPanel';
 import { LayersPanel, MusicDebug } from './LayersPanel';
 import { arranger } from './music/arranger';
 import { ModeBar, SimControls, TapPad } from './ModeBar';
 import { session } from './session';
 import { sync } from './sync';
-import { stepBus } from './steps';
+import { stepBus, type StepMode } from './steps';
 import { useStudioStats } from './useStudioStats';
-import { UnderTheHood } from './UnderTheHood';
 import { VisualScore } from './VisualScore';
 import { startWalkBridge } from './walkBridge';
 import { StageBanner } from './StageBanner';
-import { FreezePanel } from './FreezePanel';
-import { AboutPanel } from './AboutPanel';
 import { DemoGuide } from './DemoGuide';
-import { freezeWatch } from './freeze';
-import { type StepMode } from './steps';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -46,9 +41,8 @@ function useRoomCode(): string {
 }
 
 /**
- * The laptop Studio (for judges). Main area: the visual score. Side: what's happening in
- * plain words (in step %, pace, beat, layers, freeze watch) and the controls. Bottom: where
- * the steps come from, and "Under the hood" for the technical detail.
+ * The laptop Studio. The score is the hero; beside it, plain typography (how in step, pace,
+ * beat, which instruments are playing) and the controls. No boxes: hairlines and space.
  */
 export function StudioPage() {
   const room = useRoomCode();
@@ -56,33 +50,24 @@ export function StudioPage() {
   const { mode } = useStore(stepBus.settings);
   const sess = useStore(session.state);
   const a = useStore(audio.state);
-  const arr = useStore(arranger.state);
   const stats = useStudioStats();
-  const fz = useStore(freezeWatch.state);
   const [debug, setDebug] = useState(false);
-  const [hood, setHood] = useState(false);
-  const closeHood = useCallback(() => setHood(false), []);
-  const [about, setAbout] = useState(false);
-  const closeAbout = useCallback(() => setAbout(false), []);
   const [guide, setGuide] = useState(false);
 
-  // Keys (outside text fields): D music debug, H Under the hood, G demo guide, A about.
+  // Keys (outside text fields): D music debug, G demo guide.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if ((e.target as HTMLElement).closest('input, textarea')) return;
       const k = e.key.toLowerCase();
       if (k === 'd') setDebug((d) => !d);
-      if (k === 'h') setHood((v) => !v);
       if (k === 'g') setGuide((v) => !v);
-      if (k === 'a') setAbout((v) => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => stepBus.attachLink(link), [link]);
-  useEffect(() => freezeWatch.attachLink(link), [link]);
   useEffect(() => {
     session.attachLink(link);
     const stopBridge = startWalkBridge(link);
@@ -102,7 +87,6 @@ export function StudioPage() {
           link,
           sync,
           arranger,
-          freezeWatch,
           measureMix: () => import('./music/measure').then((m) => m.measureMix()),
         },
       });
@@ -117,137 +101,95 @@ export function StudioPage() {
 
   const phoneHere = snap.status === 'connected' && snap.peerConnected;
   const live = mode === 'live';
-  const layerCount = a.playing ? arr.on.filter(Boolean).length + 1 : 0;
+  const walking = sess.phase === 'calibrating' || a.playing;
 
   return (
     <div className="theme-dark studio">
-      <header className="studio__header">
-        <div className="studio__left">
-          <span className="brand">
-            <LogoMark size={34} color="var(--c-highlight)" />
-            Footnotes
-          </span>
-          <span className="pill studio__pill">Studio</span>
-        </div>
-        <div className="studio__right">
+      <header className="st-top">
+        <span className="st-brand">
+          <LogoMark size={30} color="var(--c-highlight)" />
+          <span className="serif-i">Footnotes</span>
+        </span>
+        <div className="st-meta">
           <ConnectionStatus snap={live ? snap : null} mode={mode} />
-          <span>
-            Room <span className="studio__code">{room}</span>
+          <span className="st-room">
+            room <b>{room}</b>
           </span>
         </div>
       </header>
       <StageBanner />
       <IgnoredPhoneNotice />
-      {live &&
-        phoneHere &&
-        snap.phone &&
-        !snap.phone.wakeLock &&
-        (sess.phase === 'calibrating' || a.playing) && (
-          <div className="notice" role="status">
-            <span>
-              The phone can&apos;t keep its screen on, so it may stop counting steps in a pocket. On
-              the phone: Settings → Display &amp; Brightness → Auto-Lock → Never, and turn off Low
-              Power Mode.
-            </span>
-          </div>
-        )}
+      {live && phoneHere && snap.phone && !snap.phone.wakeLock && walking && (
+        <div className="notice" role="status">
+          <span>
+            The phone can&apos;t keep its screen on, so it may stop counting steps in a pocket. On
+            the phone: Settings → Display &amp; Brightness → Auto-Lock → Never, and turn off Low
+            Power Mode.
+          </span>
+        </div>
+      )}
 
-      <main className="studio__body">
-        <section className="studio__stage" aria-label="The score, live">
-          <h2 className="studio__h">The score, live</h2>
+      <main className="st-main">
+        <section className="st-stage" aria-label="The score, live">
           <VisualScore />
-          <p className="studio__legend">
+          <p className="st-legend">
             <span className="legend-bar" aria-hidden="true" /> the beat
-            <span className="legend-dot legend-dot--on" aria-hidden="true" /> step on time
-            <span className="legend-dot legend-dot--near" aria-hidden="true" /> a bit early or late
+            <span className="legend-dot legend-dot--on" aria-hidden="true" /> a step on time
+            <span className="legend-dot legend-dot--near" aria-hidden="true" /> a little early or
+            late
             <span className="legend-dot legend-dot--off" aria-hidden="true" /> off the beat
-            <span className="legend-line legend-line--gold" aria-hidden="true" /> music layers
-            appear as they start playing
           </p>
         </section>
 
-        <aside className="studio__side">
+        <aside className="st-side">
           {debug && <MusicDebug onClose={() => setDebug(false)} />}
           {!a.playing && <ControlPanel />}
-          <InStepCard />
-          <div className="tiles">
-            <Tile
-              label="Their pace"
-              value={stats.paceSpm ? Math.round(stats.paceSpm) : '-'}
-              unit="steps/min"
-            />
-            <Tile
-              label="The beat"
-              value={sess.phase === 'ready' ? sess.tempo : '-'}
-              unit="BPM"
-              hint={
-                sess.phase !== 'ready'
-                  ? 'not set yet'
-                  : sess.manual
-                    ? 'set by hand'
-                    : `+${Math.round(sess.offset * 100)}% on their pace`
-              }
-            />
-            <Tile
-              label="Layers"
-              value={a.playing ? `${layerCount} of ${LAYER_COUNT + 1}` : '-'}
-              hint={a.playing ? 'beat + music' : 'silent'}
-            />
-            <Tile
-              label="Freeze watch"
-              value={fz.freezing ? 'Freeze detected' : 'Clear'}
-              hint={
-                fz.cause === 'simulated'
-                  ? 'simulated'
-                  : fz.liveFlag
-                    ? 'phone index high (experimental)'
-                    : 'watching'
-              }
-              alert={fz.freezing}
-            />
-          </div>
+          <InStep />
+          <dl className="figures">
+            <div>
+              <dt>their pace</dt>
+              <dd>
+                {stats.paceSpm ? Math.round(stats.paceSpm) : '–'}
+                <small>steps a minute</small>
+              </dd>
+            </div>
+            <div>
+              <dt>the beat</dt>
+              <dd>
+                {sess.phase === 'ready' ? sess.tempo : '–'}
+                <small>
+                  {sess.phase !== 'ready'
+                    ? 'not set yet'
+                    : sess.manual
+                      ? 'set by hand'
+                      : `+${Math.round(sess.offset * 100)}% on their pace`}
+                </small>
+              </dd>
+            </div>
+          </dl>
           <LayersPanel />
           {a.playing && <ControlPanel />}
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}
-          <FreezePanel />
           {live && <JoinCard room={room} compact={phoneHere} />}
         </aside>
       </main>
 
-      <footer className="studio__footer">
+      <footer className="st-foot">
         <ModeBar />
-        <div className="studio__footright">
-          <button
-            type="button"
-            className="modebar__btn"
-            aria-pressed={guide}
-            onClick={() => setGuide((v) => !v)}
-          >
-            Demo guide
-          </button>
-          <button
-            type="button"
-            className="modebar__btn"
-            aria-pressed={about}
-            onClick={() => setAbout(true)}
-          >
-            About and research
-          </button>
-          <button
-            type="button"
-            className="modebar__btn modebar__btn--hood"
-            aria-pressed={hood}
-            onClick={() => setHood(true)}
-          >
-            Under the hood
-          </button>
-        </div>
+        <button
+          type="button"
+          className="st-link"
+          aria-pressed={guide}
+          onClick={() => setGuide((v) => !v)}
+        >
+          Demo guide
+        </button>
       </footer>
 
       {sess.resumePending && a.status !== 'on' && (
         <button type="button" className="resume" onClick={() => void session.resume()}>
-          <span className="resume__title">Click anywhere to bring the music back</span>
+          <span className="resume__title serif-i">Click anywhere to bring the music back</span>
           <span className="resume__sub">
             The page was refreshed. Your walk is saved: beat {sess.tempo} BPM.
           </span>
@@ -271,9 +213,7 @@ export function StudioPage() {
         </button>
       )}
 
-      {guide && <DemoGuide onClose={() => setGuide(false)} onHood={() => setHood(true)} />}
-      {about && <AboutPanel onClose={closeAbout} />}
-      {hood && <UnderTheHood link={link} snap={snap} stats={stats} onClose={closeHood} />}
+      {guide && <DemoGuide onClose={() => setGuide(false)} />}
     </div>
   );
 }
@@ -335,30 +275,5 @@ function ConnectionStatus({ snap, mode }: { snap: StudioLinkSnapshot | null; mod
       <span className="dot" style={{ color }} aria-hidden="true" />
       {text}
     </span>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  unit,
-  hint,
-  alert,
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-  hint?: string;
-  alert?: boolean;
-}) {
-  return (
-    <div className={`tile${alert ? ' tile--alert' : ''}`}>
-      <p className="tile__label">{label}</p>
-      <p className="tile__value">
-        {value}
-        {unit && value !== '-' && <span className="tile__unit"> {unit}</span>}
-      </p>
-      {hint && <p className="tile__hint">{hint}</p>}
-    </div>
   );
 }

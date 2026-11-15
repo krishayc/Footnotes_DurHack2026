@@ -16,12 +16,10 @@
  * Faint vertical lines mark beats; stronger ones mark bar lines.
  * When the walker is in step the picture is rich and full; when they drift it thins out to
  * the beat and the steps alone.
- * Recovery (a freeze): the score takes on a calm blue wash, and the recovery motif is drawn
- * as a gentle line of large soft notes across the middle, one on every beat.
  */
 import { useEffect, useRef } from 'react';
 import { audio, type ScoreNote } from './audio/engine';
-import { LAYER_NAMES, RECOVERY_LAYER } from './music/band';
+import { LAYER_NAMES } from './music/band';
 import { arranger } from './music/arranger';
 import { stepBus } from './steps';
 import { phaseColour, sync } from './sync';
@@ -59,7 +57,6 @@ export function VisualScore() {
     let h = 0;
     // Smoothly fading lane visibility, so lanes grow in and out instead of popping.
     const vis = LANES.map(() => 0);
-    let rec = 0; // recovery wash, 0..1
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -82,18 +79,9 @@ export function VisualScore() {
       const X = (t: number) => ((t - t0) / (t1 - t0)) * w;
       const playing = audio.state.get().playing;
       const on = arranger.state.get().on;
-      const recovering = playing && arranger.state.get().recovering;
-      rec += ((recovering ? 1 : 0) - rec) * (reduced ? 1 : 0.04);
 
       ctx.fillStyle = '#0F1916';
       ctx.fillRect(0, 0, w, h);
-      if (rec > 0.01) {
-        const g = ctx.createLinearGradient(0, 0, 0, h);
-        g.addColorStop(0, `rgba(156, 199, 224, ${0.16 * rec})`);
-        g.addColorStop(1, `rgba(156, 199, 224, ${0.04 * rec})`);
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, w, h);
-      }
 
       // Lane geometry.
       const top = 14;
@@ -141,7 +129,7 @@ export function VisualScore() {
         // Lane label, always readable; dim when the layer is waiting.
         ctx.globalAlpha = 0.45 + 0.55 * a;
         ctx.fillStyle = lane.layer < 0 ? '#B9C7C0' : a > 0.5 ? lane.colour : '#4F6A60';
-        ctx.font = '700 13px "Atkinson Hyperlegible", sans-serif';
+        ctx.font = 'italic 400 16px "Fraunces Variable", Georgia, serif';
         ctx.textAlign = 'left';
         ctx.fillText(lane.label, 10, box.y + 16);
         ctx.globalAlpha = 1;
@@ -168,40 +156,6 @@ export function VisualScore() {
         else drawTwinkles(ctx, inLane, X, Y, now);
         ctx.globalAlpha = 1;
       });
-
-      // ---- Recovery motif: large soft notes on the beat, across the middle. ----
-      const recNotes = notes.filter(
-        (n) => n.layer === RECOVERY_LAYER && n.audible && n.t + n.durMs >= t0 && n.t <= t1,
-      );
-      if (recNotes.length && rec > 0.02) {
-        const yTop = boxes[1].y;
-        const yBot = boxes[3].y + boxes[3].h;
-        const Yr = (midi: number) => yBot - ((midi - 72) / (82 - 72)) * (yBot - yTop) * 0.8 - 20;
-        ctx.globalAlpha = Math.max(0.3, rec);
-        ctx.strokeStyle = '#9CC7E0';
-        ctx.fillStyle = '#9CC7E0';
-        drawCurve(
-          ctx,
-          recNotes.map((n) => ({ t: n.t, end: n.t + 120, y: Yr(n.midi) })),
-          X,
-          2,
-        );
-        for (const n of recNotes) {
-          ctx.beginPath();
-          ctx.arc(X(n.t), Yr(n.midi), 9, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-      }
-      if (rec > 0.05) {
-        ctx.globalAlpha = rec;
-        ctx.fillStyle = '#9CC7E0';
-        ctx.font = '700 18px "Atkinson Hyperlegible", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText('Recovery: same steady beat, a calm tune on every beat', w - 16, 30);
-        ctx.textAlign = 'left';
-        ctx.globalAlpha = 1;
-      }
 
       // ---- Steps lane: beat bars and step dots. ----
       const sb = boxes[LANES.length - 1];
@@ -245,7 +199,7 @@ export function VisualScore() {
 
       if (!playing) {
         ctx.fillStyle = '#B9C7C0';
-        ctx.font = '600 20px "Atkinson Hyperlegible", sans-serif';
+        ctx.font = 'italic 400 26px "Fraunces Variable", Georgia, serif';
         ctx.textAlign = 'center';
         ctx.fillText('The score begins when the beat starts', w / 2, boxes[1].y + boxes[1].h / 2);
       }

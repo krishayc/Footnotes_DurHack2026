@@ -5,7 +5,8 @@
  */
 :root {
   /* ---- light (patient phone) ---- */
-  --c-bg: #f1f3ee; /* soft sage paper */
+  --c-bg: #f1f2ea; /* soft sage paper, a touch warmer */
+  --c-paper-line: #d9ddd2; /* hairlines instead of boxes */
   --c-card: #ffffff;
   --c-card-border: #e1e7e2;
   --c-btn2-border: #c9d3cd;
@@ -33,10 +34,17 @@
   --d-note-1: #6e9486;
   --d-note-2: #9fb5ac;
   --d-note-3: #4f6a60;
+  --d-line: #2a3d36; /* hairlines on dark */
+
+  /* Fine paper grain, drawn by the browser (no image file). */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   /* ---- type ---- */
   --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  /* Headings and big numbers: Fraunces, a warm, slightly hand-made serif (its SOFT axis
+     rounds the corners). Body text stays Atkinson Hyperlegible for readability. */
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
   --fs-min: 18px; /* nothing on the phone goes below this */
   --fs-body: 20px;
   --fs-body-lg: 22px;

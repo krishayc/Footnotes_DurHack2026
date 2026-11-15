@@ -5,6 +5,8 @@ import '@fontsource/atkinson-hyperlegible/400.css';
 import '@fontsource/atkinson-hyperlegible/700.css';
 import '@fontsource/bricolage-grotesque/500.css';
 import '@fontsource/bricolage-grotesque/700.css';
+import '@fontsource-variable/fraunces/soft.css';
+import '@fontsource-variable/fraunces/soft-italic.css';
 import './styles/global.css';
 import { App } from './App';
 

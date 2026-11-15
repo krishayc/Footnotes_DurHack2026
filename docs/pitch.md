@@ -7,7 +7,7 @@ a steady beat helps many of them: it's called Rhythmic Auditory Stimulation. But
 dull, and nobody keeps using something dull. **Footnotes turns that beat into music that grows
 as you walk in time with it.** A phone in your pocket feels your steps; lock into the beat and
 bass, piano and melody join in; drift and it strips back to a clear pulse. The beat never
-chases you. If you freeze, a calm recovery tune plays on the same beat until you're moving again.
+chases you.
 
 ## 3-minute table pitch
 
@@ -19,8 +19,8 @@ Follow [demo-script.md](demo-script.md) (or the Studio's Demo guide, key **G**).
    above it.
 3. **Bloom** (45 s): walking in time brings in instruments; the visual score fills up.
 4. **Drift** (30 s): out of time, the beat stays steady and the music simplifies.
-5. **Freeze** (25 s): Simulate freeze; the calm recovery motif on the same beat; rebuild.
-6. **Tech and honesty** (20 s): Under the hood; our evaluation on 237 real freezes; the limits.
+5. **How it works** (45 s): step detection, clock sync, circular statistics; the beat never
+   chases you; the limits.
 
 ## Likely judge questions
 
@@ -44,8 +44,8 @@ We use a published method (the freeze index, Moore et al. 2008) and tested it on
 annotated freezes in the Daphnet dataset, leaving each patient out when choosing thresholds.
 At the ankle it flags about 86% of freeze time and leaves 77% of normal walking alone,
 comparable with the original paper (73.1% / 81.6%). But it gives far too many false alarms
-for daily life (100+ an hour in this lab data, where turns look like trembling). So live phone
-detection is labelled experimental and off by default; in the demo we simulate a freeze.
+for daily life (100+ an hour in this lab data, where turns look like trembling). So we left
+freeze detection out of the app.
 
 **Why is this composition?**
 The walker's movement composes the arrangement in real time: how in step they are decides

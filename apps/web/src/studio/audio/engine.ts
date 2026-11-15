@@ -35,7 +35,7 @@ export interface Beat {
 
 /** A note played by a music layer, for the visual score (performance.now() times). */
 export interface ScoreNote {
-  layer: number; // 0 Shakers, 1 Bass, 2 Keys, 3 Melody, 4 Sparkle, 5 Recovery motif
+  layer: number; // 0 Shakers, 1 Bass, 2 Keys, 3 Melody, 4 Sparkle
   midi: number;
   t: number;
   durMs: number;
@@ -130,7 +130,6 @@ class AudioEngine {
     transport.stop();
     this.clearSchedule();
     this.band?.layers.forEach((_, i) => this.band!.setLayer(i, false));
-    this.band?.setRecovery(false);
     this.state.set({ playing: false });
     for (const fn of this.stopListeners) fn();
   }
@@ -190,7 +189,6 @@ class AudioEngine {
     if (slot === 0) for (const fn of this.barListeners) fn(time, bar);
     const slotSec = 30 / Tone.getTransport().bpm.getValueAtTime(time);
     for (const layer of this.band?.layers ?? []) layer.play(time, bar, slot, slotSec);
-    this.band?.recovery.play(time, bar, slot, slotSec);
   }
 
   /** Audio-clock time of the next beat (for changes that should land on a beat). */
