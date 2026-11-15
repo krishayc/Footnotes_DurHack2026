@@ -1,5 +1,5 @@
 /**
- * Daphnet Freezing of Gait: evaluate our freeze detector and export replay clips.
+ * Daphnet Freezing of Gait: evaluate our freeze detector.
  *
  *   npm run daphnet
  *
@@ -8,7 +8,6 @@
  *   docs/daphnet-results.json                         every number
  *   docs/daphnet-evaluation.md                        the write-up (generated)
  *   packages/shared/src/dsp/freezeThresholds.ts       thresholds the app uses
- *   apps/web/public/replays/*.json + index.json       replay clips for the Studio
  *
  * Method
  *  - Files: one per subject run, 64 Hz, 3 sensors × 3 axes in mg, plus an annotation column
@@ -28,14 +27,13 @@
  *    Choosing them on the same data we score is optimistic, so we also report
  *    leave-one-subject-out: for each patient, thresholds are chosen on the other nine.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   FreezeDetector,
   FREEZE_HOP,
   FREEZE_RATE_HZ,
   FREEZE_WINDOW,
-  StepDetector,
   median,
   type FreezeThresholds,
 } from '../packages/shared/src';
@@ -457,133 +455,12 @@ export const DAPHNET_RESULTS = ${JSON.stringify(
 `,
 );
 
-// ------------------------------------------------------------------ replay clips
-const outDir = resolve(root, 'apps/web/public/replays');
-const AFTER_MS = Number(process.env.AFTER_MS ?? 15000);
-const BEFORE_MS = Number(process.env.BEFORE_MS ?? 20000);
-mkdirSync(outDir, { recursive: true });
-for (const f of readdirSync(outDir)) if (/^daphnet-.*\.json$/.test(f)) rmSync(resolve(outDir, f));
-const ankleFlags = decide(allFrames.ankle!, thresholds.ankle);
-const thighFlags = decide(allFrames.thigh!, thresholds.thigh);
-const detectedBy = (flags: boolean[], frames: Frame[], e: FreezeEvent) =>
-  frames.some(
-    (f, i) => flags[i] && f.seg === e.seg && f.t >= e.onset - 2000 && f.t <= e.end + 1000,
-  );
-
-const candidates = events
-  .map((e) => {
-    const s = segments[e.seg];
-    const dur = (e.end - e.onset) / 1000;
-    const iOn = s.t.findIndex((t) => t >= e.onset);
-    const iEnd = s.t.findIndex((t) => t >= e.end);
-    // Walking (no freeze) before, and enough after to hear the music rebuild.
-    const before =
-      s.t[iOn] - s.t[0] >= BEFORE_MS &&
-      !s.label
-        .slice(
-          s.t.findIndex((t) => t >= e.onset - BEFORE_MS),
-          iOn,
-        )
-        .includes(2);
-    const iAfter = s.t.findIndex((t) => t >= e.end + AFTER_MS);
-    const after = iAfter > 0 && !s.label.slice(iEnd + 1, iAfter).includes(2);
-    // A clean clip: the ankle detector flags nothing except the freeze itself (from 2 s
-    // before it to 3 s after: the 4 s window still holds the end of the freeze).
-    const from = e.onset - BEFORE_MS;
-    const to = e.end + AFTER_MS;
-    const fr = allFrames.ankle!;
-    const clean = !fr.some(
-      (f, i) =>
-        ankleFlags[i] &&
-        f.seg === e.seg &&
-        f.t >= from + 4000 &&
-        f.t < to &&
-        !(f.t >= e.onset - 2000 && f.t <= e.end + 3000),
-    );
-    return {
-      e,
-      dur,
-      clean,
-      ok: dur >= 3 && dur <= 20 && before && after,
-      ankle: detectedBy(ankleFlags, allFrames.ankle!, e),
-      thigh: detectedBy(thighFlags, allFrames.thigh!, e),
-    };
-  })
-  .filter((c) => c.ok && c.ankle)
-  .sort(
-    (a, b) =>
-      Number(b.clean) - Number(a.clean) || Number(b.thigh) - Number(a.thigh) || b.dur - a.dur,
-  );
-
-const chosen: typeof candidates = [];
-for (const c of candidates) {
-  if (chosen.length >= 4) break;
-  if (chosen.some((x) => x.e.subject === c.e.subject)) continue;
-  chosen.push(c);
-}
-
-const index: unknown[] = [];
-chosen.forEach((c, n) => {
-  const s = segments[c.e.seg];
-  const from = c.e.onset - BEFORE_MS;
-  const to = c.e.end + AFTER_MS;
-  const idx = s.t.map((t, i) => (t >= from && t < to ? i : -1)).filter((i) => i >= 0);
-  const pick = (g: (s: Segment, i: number) => number) => idx.map((i) => round(g(s, i), 2));
-  const thigh = pick(SIGNALS.thigh.get);
-  // Every freeze inside the clip window (relative seconds).
-  const freezes = events
-    .filter((e) => e.seg === c.e.seg && e.end >= from && e.onset <= to)
-    .map((e) => [
-      round(Math.max(0, (e.onset - from) / 1000), 2),
-      round(Math.min(to, e.end) - from, 0) / 1000,
-    ]);
-  // Walking pace before the freeze, from our own step detector on the thigh signal.
-  const steps: number[] = [];
-  const det = new StepDetector({}, (st) => steps.push(st.t));
-  idx.forEach((i, k) => {
-    if (s.t[i] < c.e.onset) det.push(s.t[i], 0, thigh[k], 0);
-  });
-  const gaps = steps
-    .slice(1)
-    .map((t, i) => t - steps[i])
-    .filter((g) => g > 250 && g < 2000);
-  const cadenceSpm = gaps.length >= 4 ? Math.round(60000 / median(gaps)) : 90;
-  const id = `daphnet-s${String(c.e.subject).padStart(2, '0')}-${n + 1}`;
-  const clip = {
-    id,
-    title: `Patient ${c.e.subject}: walking, a ${Math.round(c.dur)} s freeze, walking again${c.clean ? '' : ' (includes a false alarm)'}`,
-    subject: c.e.subject,
-    rateHz: FREEZE_RATE_HZ,
-    durationS: round(idx.length / FREEZE_RATE_HZ, 2),
-    cadenceSpm,
-    freezes,
-    detectedOffline: { ankle: c.ankle, thigh: c.thigh, noFalseAlarmsAnkle: c.clean },
-    signals: { ankle: pick(SIGNALS.ankle.get), thigh, trunk: pick(SIGNALS.trunk.get) },
-    source: 'Daphnet Freezing of Gait dataset, Bächlin et al. 2010, CC BY 4.0',
-  };
-  writeFileSync(resolve(outDir, `${id}.json`), JSON.stringify(clip));
-  index.push({ ...clip, signals: undefined });
-});
-writeFileSync(resolve(outDir, 'index.json'), JSON.stringify(index, null, 2));
-console.log(
-  `Exported ${chosen.length} replay clips to apps/web/public/replays/ (${candidates.length} candidates, ${candidates.filter((c) => c.clean).length} without false alarms).`,
-);
-writeEvaluationDoc(meta, results, {
-  candidates: candidates.length,
-  clean: candidates.filter((c) => c.clean).length,
-  chosen: chosen.map((c) => ({ subject: c.e.subject, dur: c.dur, clean: c.clean, thigh: c.thigh })),
-});
-console.log('Thresholds:', JSON.stringify(thresholds));
+writeEvaluationDoc(meta, results);
 
 // ------------------------------------------------------------------ write-up
 function writeEvaluationDoc(
   meta: Record<string, unknown> & { generated: string },
   results: Record<string, unknown>,
-  clips: {
-    candidates: number;
-    clean: number;
-    chosen: { subject: number; dur: number; clean: boolean; thigh: boolean }[];
-  },
 ) {
   type R = {
     signal: string;
@@ -676,20 +553,9 @@ ${rs.thigh.confirmationTradeoff.map((x) => `| ${x.confirmS} s | ${pct(x.eventDet
   freezing (lots of turns, doorways, stopping), and turning also puts energy in the freeze
   band. Waiting longer cuts false alarms but misses more freezes.
 - **This is why live phone freeze detection is labelled experimental** and does not change the
-  music by default. The demo replays real annotated recordings instead, and a "Simulate
-  freeze" button exists as a fallback.
+  music by default; the demo uses a "Simulate freeze" button.
 - Episode detection rates look high partly because freezes in this data are frequent and we
   allow ±2 s; read them together with the false-alarm rate.
-
-## Replay clips used in the Studio
-
-${clips.chosen.length} clips (one per patient), each ${BEFORE_MS / 1000} s of walking, the freeze, then ${AFTER_MS / 1000} s of
-walking. Chosen from ${clips.candidates} episodes that have enough walking either side and that
-the ankle detector catches; we preferred clips with no false alarms (${clips.clean} of
-${clips.candidates} qualified). **They were chosen to show the method working**; the tables
-above are the overall picture.
-
-${clips.chosen.map((c) => `- Patient ${c.subject}: ${Math.round(c.dur)} s freeze; thigh detector ${c.thigh ? 'also catches it' : 'misses it'}; ${c.clean ? 'no' : 'some'} false alarms around it.`).join('\n')}
 `;
   writeFileSync(resolve(root, 'docs/daphnet-evaluation.md'), md);
 }

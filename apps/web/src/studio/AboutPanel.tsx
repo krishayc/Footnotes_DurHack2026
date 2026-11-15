@@ -35,7 +35,7 @@ const SOURCES: Source[] = [
   {
     cite: 'Daphnet Freezing of Gait dataset, UCI Machine Learning Repository (CC BY 4.0).',
     url: 'https://archive.ics.uci.edu/dataset/245/daphnet+freezing+of+gait',
-    used: 'Our freeze detector test and the replay clips.',
+    used: 'Our freeze detector test.',
     checked: 'Format checked after download: 64 Hz, ankle/thigh/trunk, annotations 0/1/2.',
   },
 ];

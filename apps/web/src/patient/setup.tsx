@@ -18,6 +18,18 @@ import { chime, speak, unlockAudio } from './voice';
 
 export type Go = (screen: string, arg?: string) => void;
 
+/** Plain words for why the phone isn't linked to the laptop yet (null when it is). */
+export function linkProblem(link: LinkSnapshot | null): string | null {
+  const room = new URLSearchParams(location.search).get('room');
+  if (link === null || !room)
+    return 'Not connected to the music yet. Scan the code on the laptop with your camera.';
+  if (link.status === 'error') return link.error ?? 'Connection problem. Reload this page.';
+  if (link.status !== 'connected') return 'Connecting to the laptop...';
+  if (!link.peerConnected)
+    return `Waiting for the laptop in room ${room}. If the laptop shows a different room code, scan its code again.`;
+  return null;
+}
+
 /** Start the motion sensor and keep the screen awake. Must run inside a tap (iOS). */
 export function startSensing() {
   unlockAudio();
@@ -121,11 +133,7 @@ export function Home({ go, link }: { go: Go; link: LinkSnapshot | null }) {
 
       {!linked && (
         <p className="pt__note" role="status">
-          {link === null
-            ? 'Not connected to the music yet. Scan the code on the laptop with your camera.'
-            : link.status === 'connected'
-              ? 'Connected. The music will start when the laptop is ready.'
-              : 'Connecting to your music...'}
+          {linkProblem(link)}
         </p>
       )}
 
@@ -210,6 +218,17 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
     );
   };
 
+  // Someone pressed "Find their pace" on the laptop instead: follow it, so the phone shows
+  // the same countdown and moves on to Step 2 at the end.
+  useEffect(() => {
+    if (st?.phase === 'calibrating' && (phase === 'intro' || phase === 'countin')) {
+      clearTimers();
+      startSensing();
+      speak('Walk the way you normally do.');
+      setPhase('measuring');
+    }
+  }, [st?.phase, phase]);
+
   // When the laptop says calibration is done: chime, say so, then show Step 2.
   const wasCalibrating = useRef(false);
   useEffect(() => {
@@ -267,7 +286,7 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
         <>
           {!linked && (
             <p className="pt__note" role="status">
-              Waiting for the laptop. Make sure someone has opened the Studio.
+              {linkProblem(link)}
             </p>
           )}
           <Button hero onClick={begin} disabled={!linked}>

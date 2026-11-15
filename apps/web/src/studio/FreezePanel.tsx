@@ -39,11 +39,9 @@ export function FreezePanel() {
       <FreezeGraph />
       <p className="panel__p panel__p--sm">
         Freeze index = shaking power (3–8 Hz) ÷ walking power (0.5–3 Hz).{' '}
-        {f.source === 'replay'
-          ? 'From the recording being replayed.'
-          : mode === 'live'
-            ? 'From the phone: experimental, see Under the hood.'
-            : 'Live index needs the phone (Live phone mode).'}
+        {mode === 'live'
+          ? 'From the phone: experimental, see Under the hood.'
+          : 'Live index needs the phone (Live phone mode).'}
       </p>
       <div className="pair">
         <Button

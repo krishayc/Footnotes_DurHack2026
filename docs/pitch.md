@@ -19,7 +19,7 @@ Follow [demo-script.md](demo-script.md) (or the Studio's Demo guide, key **G**).
    above it.
 3. **Bloom** (45 s): walking in time brings in instruments; the visual score fills up.
 4. **Drift** (30 s): out of time, the beat stays steady and the music simplifies.
-5. **Freeze** (25 s): a real Daphnet recording; the freeze index spikes; recovery motif; rebuild.
+5. **Freeze** (25 s): Simulate freeze; the calm recovery motif on the same beat; rebuild.
 6. **Tech and honesty** (20 s): Under the hood; our evaluation on 237 real freezes; the limits.
 
 ## Likely judge questions
@@ -45,7 +45,7 @@ annotated freezes in the Daphnet dataset, leaving each patient out when choosing
 At the ankle it flags about 86% of freeze time and leaves 77% of normal walking alone,
 comparable with the original paper (73.1% / 81.6%). But it gives far too many false alarms
 for daily life (100+ an hour in this lab data, where turns look like trembling). So live phone
-detection is labelled experimental and off by default; the demo replays real recordings.
+detection is labelled experimental and off by default; in the demo we simulate a freeze.
 
 **Why is this composition?**
 The walker's movement composes the arrangement in real time: how in step they are decides

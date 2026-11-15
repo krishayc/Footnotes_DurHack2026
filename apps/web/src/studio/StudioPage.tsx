@@ -21,21 +21,22 @@ import { StageBanner } from './StageBanner';
 import { FreezePanel } from './FreezePanel';
 import { AboutPanel } from './AboutPanel';
 import { DemoGuide } from './DemoGuide';
-import { ReplayPanel } from './ReplayPanel';
 import { freezeWatch } from './freeze';
-import { replay } from './replay';
 import { type StepMode } from './steps';
 import '../ui/ui.css';
 import './studio.css';
 
-/** Keep the same room code across reloads of this tab, so the phone does not need to rejoin. */
+/**
+ * Keep the same room code on this laptop (across reloads, new tabs and restarts), so a phone
+ * that joined once never ends up waiting in an old room.
+ */
 function useRoomCode(): string {
   const [code] = useState(() => {
     try {
-      const saved = sessionStorage.getItem('footnotes.room');
+      const saved = localStorage.getItem('footnotes.room');
       if (saved) return saved;
       const fresh = makeRoomCode();
-      sessionStorage.setItem('footnotes.room', fresh);
+      localStorage.setItem('footnotes.room', fresh);
       return fresh;
     } catch {
       return makeRoomCode();
@@ -102,7 +103,6 @@ export function StudioPage() {
           sync,
           arranger,
           freezeWatch,
-          replay,
           measureMix: () => import('./music/measure').then((m) => m.measureMix()),
         },
       });
@@ -185,11 +185,9 @@ export function StudioPage() {
               hint={
                 fz.cause === 'simulated'
                   ? 'simulated'
-                  : fz.source === 'replay'
-                    ? 'from the recording'
-                    : fz.liveFlag
-                      ? 'phone index high (experimental)'
-                      : 'watching'
+                  : fz.liveFlag
+                    ? 'phone index high (experimental)'
+                    : 'watching'
               }
               alert={fz.freezing}
             />
@@ -198,7 +196,6 @@ export function StudioPage() {
           {a.playing && <ControlPanel />}
           {mode === 'tap' && <TapPad />}
           {mode === 'sim' && <SimControls />}
-          {mode === 'replay' && <ReplayPanel />}
           <FreezePanel />
           {live && <JoinCard room={room} compact={phoneHere} />}
         </aside>
@@ -271,12 +268,7 @@ function ConnectionStatus({ snap, mode }: { snap: StudioLinkSnapshot | null; mod
   let text: string;
   let color: string;
   if (!snap) {
-    text =
-      mode === 'tap'
-        ? 'Tap mode: no phone needed'
-        : mode === 'replay'
-          ? 'Replaying a real recording: no phone needed'
-          : 'Simulated walker: no phone needed';
+    text = mode === 'tap' ? 'Tap mode: no phone needed' : 'Simulated walker: no phone needed';
     color = 'var(--c-highlight)';
   } else if (snap.status === 'reconnecting' || snap.status === 'connecting') {
     text =

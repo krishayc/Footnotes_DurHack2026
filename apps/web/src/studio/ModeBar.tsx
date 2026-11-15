@@ -1,6 +1,6 @@
 /**
  * Bottom bar: where steps come from. Live phone is the real thing; Tap mode and Simulated
- * walker are the demo fallbacks; Replay plays a real freezing episode from the Daphnet data.
+ * walker are the demo fallbacks.
  */
 import { useEffect } from 'react';
 import { Button } from '../ui/Button';
@@ -11,7 +11,6 @@ const MODES: { mode: StepMode; label: string }[] = [
   { mode: 'live', label: 'Live phone' },
   { mode: 'tap', label: 'Tap mode' },
   { mode: 'sim', label: 'Simulated walker' },
-  { mode: 'replay', label: 'Replay real freeze (Daphnet)' },
 ];
 
 export function ModeBar() {

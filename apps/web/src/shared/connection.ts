@@ -155,7 +155,27 @@ export class RoomConnection {
       for (const fn of this.messageListeners) fn(msg, receivedAt);
     };
 
-    ws.onclose = () => this.handleDrop(ws);
+    ws.onclose = (ev) => {
+      // 4000 = the server gave our place in the room to a newer connection (the same page
+      // opened in another tab or on another device). Reconnecting would just kick that one
+      // out in turn, forever, so stop and say so.
+      if (ev.code === 4000 && this.ws === ws) {
+        this.ws = null;
+        this.closedByUs = true;
+        window.clearTimeout(this.watchdog);
+        window.clearInterval(this.liveness);
+        this.set({
+          status: 'error',
+          peerConnected: false,
+          error:
+            this.role === 'studio'
+              ? 'The Studio was opened in another tab. Use that one, or reload this one.'
+              : 'Another phone joined this room. Reload this page to take over again.',
+        });
+        return;
+      }
+      this.handleDrop(ws);
+    };
   }
 
   /** A socket closed or got stuck: schedule a reconnect (once per socket). */

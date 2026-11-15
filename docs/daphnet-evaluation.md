@@ -92,20 +92,6 @@ Thigh (the sensor closest to a trouser pocket):
   freezing (lots of turns, doorways, stopping), and turning also puts energy in the freeze
   band. Waiting longer cuts false alarms but misses more freezes.
 - **This is why live phone freeze detection is labelled experimental** and does not change the
-  music by default. The demo replays real annotated recordings instead, and a "Simulate
-  freeze" button exists as a fallback.
+  music by default; the demo uses a "Simulate freeze" button.
 - Episode detection rates look high partly because freezes in this data are frequent and we
   allow ±2 s; read them together with the false-alarm rate.
-
-## Replay clips used in the Studio
-
-4 clips (one per patient), each 20 s of walking, the freeze, then 15 s of
-walking. Chosen from 23 episodes that have enough walking either side and that
-the ankle detector catches; we preferred clips with no false alarms (2 of
-23 qualified). **They were chosen to show the method working**; the tables
-above are the overall picture.
-
-- Patient 7: 4 s freeze; thigh detector also catches it; no false alarms around it.
-- Patient 5: 4 s freeze; thigh detector also catches it; no false alarms around it.
-- Patient 3: 17 s freeze; thigh detector also catches it; some false alarms around it.
-- Patient 8: 13 s freeze; thigh detector also catches it; some false alarms around it.

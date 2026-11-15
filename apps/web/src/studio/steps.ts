@@ -6,7 +6,6 @@
  *                       link fails at the demo table).
  *  - Simulated walker:  a built-in walker with adjustable pace and timing jitter (demo without
  *                       anyone walking).
- *  - Replay:            steps found in a real Daphnet recording being replayed (replay.ts).
  *
  * Everything downstream (calibration, sync scoring, music, visuals) only listens to the bus,
  * so it can't tell which source is active. All times are laptop performance.now() ms.
@@ -15,7 +14,7 @@ import { Store, loadJSON, saveJSON } from '../shared/store';
 import { audio } from './audio/engine';
 import type { StudioLink } from './link';
 
-export type StepMode = 'live' | 'tap' | 'sim' | 'replay';
+export type StepMode = 'live' | 'tap' | 'sim';
 
 export interface BusStep {
   /** Laptop time when the foot landed, ms. */
@@ -37,10 +36,19 @@ const KEY = 'footnotes.studio.steps.v1';
 /** Rough phone-to-laptop delay used only before the first clock estimate exists. */
 const FALLBACK_LATENCY_MS = 150;
 
+function loadSettings(): StepSettings {
+  const s = loadJSON<StepSettings>(KEY, {
+    mode: 'live',
+    simSpm: 100,
+    simJitter: 0.04,
+    simFollow: false,
+  });
+  // A mode saved by an older version (e.g. the removed replay mode) falls back to Live phone.
+  return ['live', 'tap', 'sim'].includes(s.mode) ? s : { ...s, mode: 'live' };
+}
+
 class StepBus {
-  readonly settings = new Store<StepSettings>(
-    loadJSON<StepSettings>(KEY, { mode: 'live', simSpm: 100, simJitter: 0.04, simFollow: false }),
-  );
+  readonly settings = new Store<StepSettings>(loadSettings());
   /** Recent steps, oldest first. */
   readonly recent: BusStep[] = [];
   /** Steps since the page opened. */
@@ -52,8 +60,7 @@ class StepBus {
 
   constructor() {
     this.settings.subscribe(() => {
-      const st = this.settings.get();
-      saveJSON(KEY, st.mode === 'replay' ? { ...st, mode: 'sim' } : st);
+      saveJSON(KEY, this.settings.get());
       this.applyMode();
     });
     this.applyMode();
@@ -86,12 +93,6 @@ class StepBus {
   tap(t = performance.now()) {
     if (this.settings.get().mode !== 'tap') return;
     this.emit({ t, inferred: false, source: 'tap' });
-  }
-
-  /** Replay mode: a step found in the recording being replayed. */
-  replayStep(t: number) {
-    if (this.settings.get().mode !== 'replay') return;
-    this.emit({ t, inferred: false, source: 'replay' });
   }
 
   private emit(step: BusStep) {

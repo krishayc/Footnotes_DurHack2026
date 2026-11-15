@@ -73,7 +73,7 @@ replays it through the detector, compares settings and draws the walk as `<file>
 Freeze detection test: download the Daphnet zip (link in
 [docs/daphnet-evaluation.md](docs/daphnet-evaluation.md)) into `scripts/daphnet/raw/`, then
 `npm run daphnet` (about 10 s): writes the results to `docs/`, the thresholds to
-`packages/shared`, and the replay clips to `apps/web/public/replays/`.
+and the thresholds to `packages/shared`.
 
 Other scripts: `npm run typecheck`, `npm run lint`, `npm run format`.
 
@@ -97,8 +97,7 @@ apps/web/            Vite + React + TypeScript (routes: / , /sensor , /studio)
   src/sensor/        motion sensor, wake lock, step tracker, link to the laptop, developer screen
   src/shared/        WebSocket connection, stores, ring buffers, haptics
   src/studio/        laptop Studio: audio engine, band + arranger, sync, visual score, freeze
-                     watch, Daphnet replay, demo guide, About and research
-  public/replays/    Daphnet replay clips (made by npm run daphnet)
+                     watch, demo guide, About and research
 apps/server/         Node + ws relay, static hosting, recordings endpoint
 packages/shared/     message protocol, room codes, clock sync, DSP (steps, calibration, sync,
                      arrangement, freeze index) + tests, used by web, server and scripts
@@ -198,7 +197,7 @@ faster/slower) and the laptop reports back the phase, beat, score and layers.
   (walking), over a 4 s window every 0.5 s, plus a minimum movement power so standing still
   isn't a freeze. One shared implementation
   ([packages/shared/src/dsp/freeze.ts](packages/shared/src/dsp/freeze.ts)) runs in the
-  evaluation, the replay and the live phone watch.
+  evaluation and the live phone watch.
 - **Tested on real patients:** `npm run daphnet` runs it on the whole Daphnet dataset (10
   patients, 237 annotated freezes) for the ankle, thigh and hip sensors, picks thresholds and,
   to be fair, re-tests with each patient left out. Full results:
@@ -211,31 +210,24 @@ faster/slower) and the laptop reports back the phase, beat, score and layers.
   No tempo change, no volume jump. When the freeze ends, the motif finishes its bar and the
   music rebuilds one layer per bar. The score turns a calm blue; the phone says "Take your
   time. Listen for the beat, then take a big step."
-- **Replay real freeze (Daphnet)** in the Studio's bottom bar plays a real recording through
-  the same pipeline (thigh signal → step detector; chosen sensor → freeze index), with a
-  timeline of the physiotherapists' marked freeze against ours. Measured on Patient 7: the
-  music builds to all 5 layers, the freeze (marked at 20.0 s) is flagged at 22.5 s, recovery
-  plays, and the music is back to 5 layers 12 s after the freeze ends.
 - **Live phone freeze index is experimental** and only shown by default (a tick-box lets it
-  change the music). **Simulate freeze** is the fallback button.
-- Replay clips: 4 clips, one per patient. Only 2 of 23 suitable freezes had no false alarm
-  anywhere in a 40 s clip; the other two are labelled "(includes a false alarm)".
+  change the music). In the demo, **Simulate freeze** shows the recovery music.
 
 ## Demo day
 
 - **Demo guide** (Studio button, or **G**): the 3-minute judge script one step at a time, with
   a clock, the words to say, and a button for each step's action and its no-phone fallback
   (simulated walker, Simulate freeze). Tested end to end with only the fallbacks: calibration
-  (92 steps/min → 97 BPM beat), bloom, drift back to the pulse, the real freeze replay, Under
+  (92 steps/min → 97 BPM beat), bloom, drift back to the pulse, a simulated freeze, Under
   the hood, with no console errors.
 - **About and research** (button, or **A**): what it is and isn't, sources (each checked
   against its abstract, or marked "to verify"), and honest limits.
-- **Fallbacks:** Tap mode (spacebar or pad), Simulated walker, Replay real freeze, Simulate
+- **Fallbacks:** Tap mode (spacebar or pad), Simulated walker, Simulate
   freeze. A refresh mid-walk offers one click to bring the music back.
-- **Offline:** no external requests at run time (fonts, music and replay clips are bundled).
+- **Offline:** no external requests at run time (fonts and music are bundled).
   With no internet the Cloudflare tunnel can't run: put laptop and phone on a phone hotspot and
   use `npm run dev:https` (see [docs/https-setup.md](docs/https-setup.md)). The laptop alone
-  (tap, simulated walker, replay) needs no network at all.
+  (tap, simulated walker) needs no network at all.
 - **Saved locally:** Studio volume, beat offset, step source and simulated walker settings;
   on the phone, preferences, step settings and walk history.
 - Not yet measured: frame rate of the score on the demo laptop (my test browser was hidden,
@@ -286,7 +278,7 @@ bundled locally so the demo works offline.
 ## Credits and licences
 
 - Fonts: Atkinson Hyperlegible and Bricolage Grotesque, SIL Open Font License, via Fontsource.
-- **Daphnet Freezing of Gait dataset** (UCI ML Repository, CC BY 4.0). Replay clips in
-  `apps/web/public/replays/` are excerpts of it. Bächlin, Plotnik, Roggen, Maidan, Hausdorff,
+- **Daphnet Freezing of Gait dataset** (UCI ML Repository, CC BY 4.0), used to test the
+  freeze detector. Bächlin, Plotnik, Roggen, Maidan, Hausdorff,
   Giladi, Tröster, _Wearable Assistant for Parkinson's Disease Patients With the Freezing of
   Gait Symptom_, IEEE Trans. Inf. Technol. Biomed. 14(2):436–446, 2010.

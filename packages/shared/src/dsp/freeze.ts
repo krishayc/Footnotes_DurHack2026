@@ -20,7 +20,7 @@
  *      the state doesn't flicker (enter after 1 hop over threshold, leave after 2 under).
  *
  * The same class runs in the offline Daphnet evaluation (scripts/daphnet.ts) and in the
- * Studio (replay and the experimental live phone watch), so the numbers in docs/ describe
+ * Studio (the experimental live phone watch), so the numbers in docs/ describe
  * exactly the code the demo runs.
  */
 

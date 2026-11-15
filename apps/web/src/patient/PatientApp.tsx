@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../shared/store';
-import { useSensorLink } from '../sensor/link';
+import { useSensorLink, walk } from '../sensor/link';
 import { SensorPage } from '../sensor/SensorPage';
 import { prefs } from './prefs';
 import { Home, Step1, Step2, Welcome } from './setup';
@@ -37,6 +37,13 @@ export function PatientApp() {
   useEffect(() => {
     document.title = 'Footnotes';
   }, []);
+
+  // "Find their pace" pressed on the laptop while the phone is on Home: open Step 1, which
+  // follows the laptop's countdown.
+  const phase = useStore(walk).state?.phase;
+  useEffect(() => {
+    if (phase === 'calibrating' && route.name === 'home') go('step1');
+  }, [phase, route.name, go]);
 
   switch (route.name) {
     case 'welcome':

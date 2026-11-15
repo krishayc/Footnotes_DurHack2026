@@ -45,10 +45,9 @@ to. DurHack's theme was Composition, so we let the walker compose the music.
   balanced by measuring each layer offline; layers enter and leave on bar lines with fades,
   with hysteresis so the arrangement never flickers.
 - **Freeze detection**: the freeze index (power at 3–8 Hz ÷ power at 0.5–3 Hz, Moore et al.
-  2008), one shared implementation used by our evaluation, the replay and the live watch.
+  2008), one shared implementation used by our evaluation and the live watch.
 - **Evaluation** on the Daphnet dataset (10 patients, 237 annotated freezes), with
-  leave-one-patient-out thresholds; real recordings replay through the live pipeline in the
-  demo.
+  leave-one-patient-out thresholds.
 
 ## Challenges we ran into
 

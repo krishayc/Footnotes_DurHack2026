@@ -17,8 +17,6 @@ import { LAYER_COUNT, stepLevel, targetLevel } from '@footnotes/shared';
 import { Store } from '../../shared/store';
 import { audio } from '../audio/engine';
 import { freezeWatch } from '../freeze';
-import { replay } from '../replay';
-import { stepBus } from '../steps';
 import { sync } from '../sync';
 
 export type Force = 'auto' | 'on' | 'off';
@@ -88,11 +86,10 @@ class Arranger {
     }
   }
 
-  /** The score that drives the layers (replay: are they walking; otherwise: in step). */
+  /** The score that drives the layers: the debug fake score, or how in step they are. */
   private currentScore(): number {
     const fake = this.state.get().fakeScore;
     if (fake !== null) return fake;
-    if (stepBus.settings.get().mode === 'replay') return replay.walkScore();
     return sync.state.get().score;
   }
 

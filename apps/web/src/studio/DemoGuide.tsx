@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
 import { freezeWatch } from './freeze';
-import { replay } from './replay';
 import { session } from './session';
 import { stepBus } from './steps';
 
@@ -87,18 +86,12 @@ const STEPS: Step[] = [
   {
     from: 135,
     to: 160,
-    title: 'A real freeze',
-    say: 'This is a real recording of a person with Parkinson’s freezing, from a research dataset. Same pipeline: the freeze index spikes, the music switches to a calm recovery tune on the same beat, then rebuilds as they walk again.',
-    doText: 'Point at the timeline: the physios’ marked freeze versus ours, and the blue score.',
+    title: 'A freeze',
+    say: 'Sometimes people with Parkinson’s freeze: the feet feel glued to the floor. When that happens, the music drops to the beat with a calm recovery tune on every beat, and rebuilds once they’re moving. The beat never changes.',
+    doText:
+      'Press Simulate freeze, let the recovery tune play for a few beats, then press End the freeze.',
     action: {
-      label: 'Replay a real freeze',
-      run: () => {
-        stepBus.setMode('replay');
-        void replay.loadIndex().then(() => replay.play());
-      },
-    },
-    fallback: {
-      label: 'Simulate freeze',
+      label: 'Simulate freeze / end it',
       run: () => freezeWatch.setSimulated(!freezeWatch.state.get().simulated),
     },
   },
@@ -106,7 +99,7 @@ const STEPS: Step[] = [
     from: 160,
     to: 180,
     title: 'Under the hood',
-    say: 'Under the hood: step detection, clock sync between phone and laptop to the millisecond, circular statistics for the in-step score, and the freeze detector tested on 237 real freezes. Honestly: it works best at the ankle, and from a pocket it’s experimental.',
+    say: 'Under the hood: step detection, clock sync between phone and laptop to the millisecond, circular statistics for the in-step score, and a freeze detector we tested on 237 real freezes from patients. Honestly: it works best at the ankle; from a pocket it’s experimental.',
     doText: 'Open Under the hood. Finish on About and research if asked about evidence.',
   },
 ];

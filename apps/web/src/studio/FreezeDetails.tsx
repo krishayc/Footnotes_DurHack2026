@@ -20,7 +20,7 @@ export function FreezeDetails() {
       </h2>
       <dl className="sync__nums">
         <div>
-          <dt>Freeze index now ({f.source === 'replay' ? 'recording' : 'phone, experimental'})</dt>
+          <dt>Freeze index now (phone, experimental)</dt>
           <dd>{last ? last.fi.toFixed(2) : '-'}</dd>
         </div>
         <div>
@@ -73,8 +73,8 @@ export function FreezeDetails() {
       <p className="panel__p panel__p--sm">
         Honest limits: the ankle works best; sensors higher up (where a pocket phone is) do worse,
         and every position gives far too many false alarms for daily life (turns look like
-        trembling). So the live phone index is experimental and off by default; the demo replays
-        real recordings. Full write-up: docs/daphnet-evaluation.md.
+        trembling). So the live phone index is experimental and off by default; the demo uses
+        Simulate freeze. Full write-up: docs/daphnet-evaluation.md.
       </p>
     </section>
   );

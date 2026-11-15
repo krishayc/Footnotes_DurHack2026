@@ -1,10 +1,8 @@
 /**
  * Freeze watch: is the walker freezing right now?
  *
- * Three ways a freeze can be flagged:
- *  - Replay: the freeze index from a real Daphnet recording being replayed (replay.ts feeds
- *    the samples). This is what the demo relies on.
- *  - Simulate freeze: a button, for demos without a recording.
+ * Two ways a freeze can be flagged:
+ *  - Simulate freeze: a button. This is what the demo relies on.
  *  - Live phone (EXPERIMENTAL): the same freeze index on the phone's accelerometer, using the
  *    thresholds for the thigh sensor (the closest Daphnet position to a trouser pocket). Our
  *    Daphnet evaluation shows this gives many false alarms, so by default it is only shown,
@@ -33,12 +31,10 @@ export interface FreezeState {
   /** Should the music be in recovery mode? */
   freezing: boolean;
   /** Why (for the screen). */
-  cause: 'replay' | 'simulated' | 'live' | null;
+  cause: 'simulated' | 'live' | null;
   simulated: boolean;
   /** Experimental: let the live phone freeze index change the music. */
   liveDrivesMusic: boolean;
-  /** Which signal the graph shows. */
-  source: 'live' | 'replay';
   /** Thresholds of the signal shown. */
   thresholds: FreezeThresholds;
   last: FreezeFrame | null;
@@ -59,14 +55,11 @@ class FreezeWatch {
     cause: null,
     simulated: false,
     liveDrivesMusic: false,
-    source: 'live',
     thresholds: FREEZE_THRESHOLDS.thigh,
     last: null,
     liveFlag: false,
   });
   readonly history: GraphFrame[] = [];
-  private replayDet: FreezeDetector | null = null;
-  private replayFreezing = false;
   private liveDet = new FreezeDetector(FREEZE_THRESHOLDS.thigh, (f) => this.onLive(f));
   private link: StudioLink | null = null;
   private poll: number | undefined;
@@ -94,37 +87,9 @@ class FreezeWatch {
   }
 
   private onLive(f: FreezeFrame) {
-    if (this.state.get().source !== 'live') return;
     const laptopT = this.link?.toLocal(f.t) ?? performance.now();
     this.addFrame({ ...f, laptopT });
     this.state.set({ liveFlag: f.freezing });
-    this.update();
-  }
-
-  /** Replay: start a fresh detector for the chosen sensor. */
-  startReplay(sensor: FreezeSensor) {
-    this.history.length = 0;
-    this.replayFreezing = false;
-    const th = FREEZE_THRESHOLDS[sensor];
-    this.replayDet = new FreezeDetector(th, (f) => {
-      this.addFrame({ ...f, laptopT: f.t });
-      this.replayFreezing = f.freezing;
-      this.update();
-    });
-    this.state.set({ source: 'replay', thresholds: th, last: null });
-    this.update();
-  }
-
-  /** Replay: one sample (t = laptop performance.now() time, v = acceleration magnitude). */
-  feedReplay(t: number, v: number) {
-    this.replayDet?.push(t, v);
-  }
-
-  stopReplay() {
-    this.replayDet = null;
-    this.replayFreezing = false;
-    this.history.length = 0;
-    this.state.set({ source: 'live', thresholds: FREEZE_THRESHOLDS.thigh, last: null });
     this.update();
   }
 
@@ -146,14 +111,11 @@ class FreezeWatch {
 
   private update() {
     const s = this.state.get();
-    const replaying = s.source === 'replay';
     const cause: FreezeState['cause'] = s.simulated
       ? 'simulated'
-      : replaying && this.replayFreezing
-        ? 'replay'
-        : !replaying && s.liveDrivesMusic && s.liveFlag
-          ? 'live'
-          : null;
+      : s.liveDrivesMusic && s.liveFlag
+        ? 'live'
+        : null;
     if (cause !== s.cause || (cause !== null) !== s.freezing)
       this.state.set({ cause, freezing: cause !== null });
   }
