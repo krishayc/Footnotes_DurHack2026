@@ -181,6 +181,8 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
   const s = useSteps();
   const [phase, setPhase] = useState<Step1Phase>('intro');
   const [count, setCount] = useState(3);
+  /** The laptop never confirmed it started counting (after several tries). */
+  const [stuck, setStuck] = useState(false);
   const [, tick] = useState(0);
   const timers = useRef<number[]>([]);
   const linked = link?.status === 'connected' && link.peerConnected;
@@ -228,6 +230,27 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
       setPhase('measuring');
     }
   }, [st?.phase, phase]);
+
+  // The laptop does the counting. Until it confirms it has started, keep asking (a message
+  // sent while the connection was blinking would otherwise be lost, leaving the ring stuck
+  // at 20). After 8 s without an answer, say so plainly.
+  const laptopCounting = st?.phase === 'calibrating';
+  useEffect(() => {
+    if (phase !== 'measuring' || laptopCounting) {
+      setStuck(false);
+      return;
+    }
+    const startedAt = performance.now();
+    const id = window.setInterval(() => {
+      if (performance.now() - startedAt > 8000) {
+        setStuck(true);
+        window.clearInterval(id);
+        return;
+      }
+      sendWalkCommand('calibrate');
+    }, 1500);
+    return () => window.clearInterval(id);
+  }, [phase, laptopCounting]);
 
   // When the laptop says calibration is done: chime, say so, then show Step 2.
   const wasCalibrating = useRef(false);
@@ -328,10 +351,22 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
               />
             </svg>
             <div className="pt__ringtext">
-              <span className="pt__ringnum">{secs}</span>
-              <span>seconds left</span>
+              {laptopCounting ? (
+                <>
+                  <span className="pt__ringnum">{secs}</span>
+                  <span>seconds left</span>
+                </>
+              ) : (
+                <span>Starting on the laptop...</span>
+              )}
             </div>
           </div>
+          {stuck && (
+            <p className="pt__note pt__warn" role="alert">
+              {linkProblem(link) ??
+                'The laptop has not started counting. Check the laptop page is open, then press Start again.'}
+            </p>
+          )}
           <div className="card pt__stepcard">
             <span className="pt__footicon">
               <IconFoot />
