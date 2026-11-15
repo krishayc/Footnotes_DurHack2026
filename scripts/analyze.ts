@@ -8,13 +8,22 @@
  * exactly where steps were found (or doubled, or missed).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { StepDetector, median, type LegMode, type StepDetectorSettings } from '@footnotes/shared';
+import {
+  DEFAULT_STEP_SETTINGS,
+  StepDetector,
+  median,
+  type LegMode,
+  type StepDetectorSettings,
+} from '@footnotes/shared';
 
 interface Recording {
   recordedAt: string;
-  device: string;
+  device?: string;
   rateHz: number;
-  settings: StepDetectorSettings;
+  settings?: Partial<StepDetectorSettings>;
+  /** Present when saved from the Studio: beat times in the phone's clock. */
+  beats?: number[];
+  tempo?: number;
   oneLegAtEnd: boolean;
   cadenceAtEnd: number | null;
   samples: [number, number, number, number][];
@@ -31,14 +40,15 @@ if (!file) {
 }
 const counted = args.includes('--steps') ? Number(args[args.indexOf('--steps') + 1]) : null;
 const rec = JSON.parse(readFileSync(file, 'utf8')) as Recording;
+const baseSettings: StepDetectorSettings = { ...DEFAULT_STEP_SETTINGS, ...(rec.settings ?? {}) };
 const t0 = rec.samples[0][0];
 const seconds = (rec.samples[rec.samples.length - 1][0] - t0) / 1000;
 
-function run(legMode: LegMode) {
+function run(legMode: LegMode, overrides: Partial<StepDetectorSettings> = {}) {
   const steps: { t: number; inferred: boolean }[] = [];
   const frames: { t: number; f: number; thr: number }[] = [];
   const peaks: number[] = [];
-  const det = new StepDetector({ ...rec.settings, legMode }, (s) => {
+  const det = new StepDetector({ ...baseSettings, ...overrides, legMode }, (s) => {
     steps.push({ t: s.t, inferred: s.inferred });
     if (!s.inferred) peaks.push(s.t);
   });
@@ -83,6 +93,21 @@ for (const m of modes) {
     `  ${m.padEnd(5)} -> ${String(r.steps.length).padStart(3)} steps, pace ${r.cadence?.toFixed(0) ?? '-'} steps/min${m === 'auto' ? ` (decided: ${r.oneLeg ? 'one leg' : 'both legs'})` : ''}`,
   );
 }
+// Sensitivity sweep: how the count changes with a more or less sensitive detector.
+console.log('  Sensitivity sweep (both legs):  k = threshold multiplier, prom = minimum bump');
+for (const k of [0.2, 0.4, 0.6]) {
+  const row: string[] = [];
+  for (const prom of [0.3, 0.5, 0.8]) {
+    const r = run('both', {
+      thresholdK: k,
+      minProminence: prom,
+      minAmplitude: Math.min(0.5, prom),
+    });
+    row.push(`prom ${prom}: ${String(r.steps.length).padStart(3)}`);
+  }
+  console.log(`    k ${k}:  ${row.join('   ')}`);
+}
+
 if (counted) {
   for (const m of modes) {
     const r = results[m];
@@ -126,6 +151,11 @@ for (let r = 0; r < rows; r++) {
   parts.push(
     `<polyline fill="none" stroke="#F2B544" stroke-width="2" points="${inRow.map((f) => `${X(f.t - shift).toFixed(1)},${Y(f.f).toFixed(1)}`).join(' ')}"/>`,
   );
+  for (const b of (rec.beats ?? []).filter((b) => b >= start && b < start + rowMs)) {
+    parts.push(
+      `<rect x="${(X(b) - 3).toFixed(1)}" y="${y0 + ROW_H - 46}" width="6" height="40" rx="3" fill="#F2B544"/>`,
+    );
+  }
   for (const s of rec.steps.filter((s) => s.t >= start && s.t < start + rowMs)) {
     parts.push(
       `<circle cx="${X(s.t).toFixed(1)}" cy="${y0 + 30}" r="7" ${s.inferred ? 'fill="none" stroke="#7FD1A8" stroke-width="2"' : 'fill="#7FD1A8"'}/>`,
@@ -135,7 +165,7 @@ for (let r = 0; r < rows; r++) {
 const html = `<!doctype html><meta charset="utf-8"><title>${file}</title>
 <body style="background:#0F1916;color:#F1F3EE;font:16px system-ui;margin:20px">
 <h2>${file}</h2>
-<p>Gold: smoothed movement. Dashed: threshold. Green dots: steps the phone detected (hollow = inferred, i.e. the phone was counting one leg and filled in the other).</p>
+<p>Gold line: smoothed movement. Dashed: threshold. Green dots (top): steps the phone detected (hollow = inferred). Marigold bars (bottom): beats that played.</p>
 <pre>${['both', 'one', 'auto'].map((m) => `${m}: ${results[m as LegMode].steps.length} steps, pace ${results[m as LegMode].cadence?.toFixed(0) ?? '-'}`).join('\n')}</pre>
 <svg width="${W}" height="${rows * (ROW_H + 30) + 20}">${parts.join('')}</svg></body>`;
 const out = file.replace(/\.json$/, '.html');

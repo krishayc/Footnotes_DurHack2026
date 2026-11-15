@@ -3,7 +3,8 @@
  * Raw signal and steps from the phone, the timing maths, the connection and clock sync,
  * how the phone counts, the music debug controls. (Freeze index arrives in Stage 8.)
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { saveLastMinute } from './saveRecording';
 import { LiveLane } from './LiveLane';
 import { MusicDebug } from './LayersPanel';
 import { PhoneCounting } from './PhoneCounting';
@@ -26,6 +27,7 @@ export function UnderTheHood({ link, snap, stats, onClose }: Props) {
   }, [onClose]);
 
   const phoneHere = snap.status === 'connected' && snap.peerConnected;
+  const [saved, setSaved] = useState<string | null>(null);
   return (
     <div className="hood" role="dialog" aria-modal="true" aria-labelledby="hood-h">
       <div className="hood__head">
@@ -45,6 +47,22 @@ export function UnderTheHood({ link, snap, stats, onClose }: Props) {
           </p>
           <div className="hood__lane">
             <LiveLane link={link} />
+          </div>
+          <div className="hood__save">
+            <button
+              type="button"
+              className="modebar__btn modebar__btn--hood"
+              onClick={() => {
+                setSaved('Saving...');
+                void saveLastMinute(link).then(setSaved);
+              }}
+            >
+              Save the last minute for tuning
+            </button>
+            <p className="panel__p panel__p--sm" role="status">
+              {saved ??
+                'Saves the raw phone signal, detected steps and beats so step detection can be tuned on a real walk.'}
+            </p>
           </div>
         </section>
         <SyncDetails />

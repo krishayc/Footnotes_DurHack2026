@@ -330,6 +330,25 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
 
 // ---------------------------------------------------------------- Step 2: your beat
 
+/**
+ * Ask the laptop to start the beat ONCE, when this screen is first ready for it (sound on,
+ * beat chosen). Never again after that: if someone stops the beat on the laptop, the phone
+ * must not quietly restart it.
+ */
+export function useStartBeatOnce() {
+  const { state: st } = useStore(walk);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current || !st) return;
+    if (st.phase === 'walking')
+      asked.current = true; // already playing
+    else if (st.audioOn && st.phase === 'ready') {
+      asked.current = true;
+      sendWalkCommand('startBeat');
+    }
+  }, [st]);
+}
+
 /** A calm circle that pulses exactly on the laptop's beat (clock-synced). */
 export function BeatPulse({ size = 180, dark = false }: { size?: number; dark?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -364,10 +383,8 @@ export function Step2({ go }: { go: Go }) {
   const { state: st } = useStore(walk);
   const tempo = st?.tempo ?? 0;
 
-  // Play the beat so they can hear it (the laptop plays it; we start it once).
-  useEffect(() => {
-    if (st?.audioOn && st.phase === 'ready') sendWalkCommand('startBeat');
-  }, [st?.audioOn, st?.phase]);
+  // Play the beat so they can hear it (the laptop plays it; we ask once).
+  useStartBeatOnce();
 
   const speech = `Your beat: ${tempo} steps a minute. Put the phone in your pocket and walk along to the beat. Press Start walking when you're ready.`;
   return (

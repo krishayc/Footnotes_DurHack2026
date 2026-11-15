@@ -15,7 +15,7 @@ import {
   type Walk,
 } from './history';
 import { prefs } from './prefs';
-import { BeatPulse, type Go } from './setup';
+import { BeatPulse, useStartBeatOnce, type Go } from './setup';
 import { StaffPicture } from './StaffPicture';
 import { Screen, SpeakButton } from './ui';
 import { chime, playNotes, speak } from './voice';
@@ -41,7 +41,6 @@ export function Walking({ go }: { go: Go }) {
   useEffect(() => {
     startWalk();
     speak('Walk along to the beat.');
-    if (!st?.layersOn && st?.phase === 'ready') sendWalkCommand('startBeat');
     const id = window.setInterval(() => {
       tick((n) => n + 1);
       setDim(performance.now() - lastTouch.current > DIM_AFTER_MS);
@@ -50,13 +49,11 @@ export function Walking({ go }: { go: Go }) {
       window.clearInterval(id);
       cancelAnimationFrame(raf.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
-  // Make sure the beat is playing (e.g. if Step 2 was skipped).
-  useEffect(() => {
-    if (st && st.audioOn && st.phase === 'ready') sendWalkCommand('startBeat');
-  }, [st?.audioOn, st?.phase, st]);
+  // Make sure the beat is playing (e.g. if Step 2 was skipped), asking only once.
+  useStartBeatOnce();
 
   // Press and hold anywhere to stop. Quick taps and pocket bumps do nothing.
   const begin = (e: PointerEvent) => {
@@ -88,11 +85,14 @@ export function Walking({ go }: { go: Go }) {
   const mins = Math.floor(walkSeconds() / 60);
   const paused = isPaused();
   const score = st?.score ?? 0;
-  const status = paused
-    ? 'Paused. The music will help you restart.'
-    : score >= 0.6
-      ? 'In step'
-      : 'Finding the beat';
+  const musicStopped = !!st && st.phase !== 'walking';
+  const status = musicStopped
+    ? 'The music is stopped on the laptop'
+    : paused
+      ? 'Paused. The music will help you restart.'
+      : score >= 0.6
+        ? 'In step'
+        : 'Finding the beat';
   const fresh = s.lastStepAt !== null && performance.now() - s.lastStepAt < 3000;
   const on = st?.layersOn ?? [];
   const R = 34;
@@ -133,7 +133,7 @@ export function Walking({ go }: { go: Go }) {
           <rect x="3" y="14" width="4" height="6" rx="1.5" />
           <rect x="17" y="14" width="4" height="6" rx="1.5" />
         </svg>
-        {st?.audioOn ? 'Music playing' : 'Waiting for the music'}
+        {!st?.audioOn ? 'Waiting for the music' : musicStopped ? 'Music stopped' : 'Music playing'}
       </p>
 
       <div className="walk__centre">

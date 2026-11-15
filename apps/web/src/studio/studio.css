@@ -662,3 +662,9 @@
   font-size: 17px;
   padding: var(--s-2) var(--s-4);
 }
+.hood__save {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}

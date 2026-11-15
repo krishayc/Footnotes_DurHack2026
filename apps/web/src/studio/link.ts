@@ -44,7 +44,7 @@ export class StudioLink {
   readonly conn: RoomConnection;
   readonly clock = new ClockSync();
   /** Raw accelerometer from the phone, in PHONE time. */
-  readonly accel = new SampleBuffer(4096);
+  readonly accel = new SampleBuffer(16384); // ~4 min at 60 Hz, for "save the last minute"
   readonly steps: RemoteStep[] = [];
   private phone: StudioLinkSnapshot['phone'] = null;
   private lastPhoneMsgAt: number | null = null;
