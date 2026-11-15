@@ -51,6 +51,9 @@ export class RoomConnection {
   private takeovers: number[] = [];
   /** A phone page that was hidden when it lost the room: rejoin when it's on screen again. */
   private waitingForVisible = false;
+  /** Recent connection events, for diagnosing drops (sent to the server's connection log). */
+  private events: string[] = [];
+  private dropsSinceReport = 0;
   private snapshot: LinkSnapshot = {
     status: 'connecting',
     peerConnected: false,
@@ -77,8 +80,30 @@ export class RoomConnection {
     return () => this.messageListeners.delete(fn);
   }
 
+  /** Note an event for the connection log. */
+  private note(text: string) {
+    const t = (performance.now() / 1000).toFixed(1);
+    this.events.push(`${t}s ${text}${document.visibilityState === 'hidden' ? ' [hidden]' : ''}`);
+    if (this.events.length > 60) this.events.shift();
+  }
+
+  /** Send our side of the story to the server log (plain HTTP, works even if sockets don't). */
+  private report() {
+    try {
+      void fetch('/api/clientlog', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ role: this.role, room: this.room, events: this.events }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      /* never let logging break the app */
+    }
+  }
+
   start() {
     this.closedByUs = false;
+    document.addEventListener('visibilitychange', this.noteVisibility);
     document.addEventListener('visibilitychange', this.onVisible);
     window.addEventListener('online', this.onVisible);
     this.connect();
@@ -93,6 +118,7 @@ export class RoomConnection {
     window.clearTimeout(this.watchdog);
     window.clearInterval(this.liveness);
     document.removeEventListener('visibilitychange', this.onVisible);
+    document.removeEventListener('visibilitychange', this.noteVisibility);
     window.removeEventListener('online', this.onVisible);
     this.ws?.close();
     this.ws = null;
@@ -116,6 +142,7 @@ export class RoomConnection {
     const url = `${proto}//${location.host}${WS_PATH}`;
     const ws = new WebSocket(url);
     this.ws = ws;
+    this.note(`connecting (try ${this.snapshot.attempts + 1})`);
     this.set({ attempts: this.snapshot.attempts + 1, url });
 
     // Watchdog: if the server hasn't welcomed us within a few seconds, this attempt is stuck
@@ -125,6 +152,7 @@ export class RoomConnection {
     this.watchdog = window.setTimeout(() => {
       if (welcomed || this.ws !== ws) return;
       console.warn(`[footnotes] no welcome from ${url} after ${CONNECT_TIMEOUT_MS} ms, retrying`);
+      this.note('no welcome from the server in 6 s: retrying');
       this.handleDrop(ws);
       ws.close();
     }, CONNECT_TIMEOUT_MS);
@@ -148,6 +176,11 @@ export class RoomConnection {
       if (!msg || msg.type === 'keepalive') return;
       if (msg.type === 'hello') {
         welcomed = true;
+        this.note(`joined room (laptop ${msg.peerConnected ? 'here' : 'not here'})`);
+        if (this.dropsSinceReport > 0) {
+          this.dropsSinceReport = 0;
+          this.report();
+        }
         window.clearTimeout(this.watchdog);
         this.backoff = 500;
         this.set({ status: 'connected', peerConnected: msg.peerConnected, error: null });
@@ -160,6 +193,12 @@ export class RoomConnection {
     };
 
     ws.onclose = (ev) => {
+      if (this.ws === ws) {
+        this.note(
+          `closed: code ${ev.code}${ev.reason ? ` "${ev.reason}"` : ''}${ev.wasClean ? '' : ' (not clean)'}`,
+        );
+        this.dropsSinceReport++;
+      }
       // 4000 = the server gave our place in the room to a newer connection (the same page
       // opened in another tab or on another device).
       if (ev.code === 4000 && this.ws === ws && this.role === 'sensor') {
@@ -193,6 +232,8 @@ export class RoomConnection {
    * screen again (a hidden page can't count steps anyway). If two pages that are both on
    * screen keep swapping, stop and say so instead of flapping forever.
    */
+  private noteVisibility = () => this.note(`page ${document.visibilityState}`);
+
   private onReplaced(ws: WebSocket) {
     this.ws = null;
     window.clearTimeout(this.watchdog);
@@ -208,6 +249,8 @@ export class RoomConnection {
         error:
           'Footnotes is open on another phone or in another tab. Close the others, then reload this page.',
       });
+      this.note('gave up: kept being replaced');
+      this.report();
       return;
     }
     this.set({ status: 'reconnecting', peerConnected: false });
@@ -254,6 +297,7 @@ export class RoomConnection {
       performance.now() - this.lastHeardAt > SILENT_LIMIT_MS
     ) {
       console.warn('[footnotes] connection went silent, reconnecting');
+      this.note('heard nothing for 8 s: reconnecting');
       this.handleDrop(ws);
       ws.close();
       return;

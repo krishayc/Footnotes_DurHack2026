@@ -19,7 +19,7 @@
  */
 import express from 'express';
 import { createServer } from 'node:http';
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
@@ -48,8 +48,23 @@ function send(ws: WebSocket | undefined, msg: ServerMsg) {
   if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
 }
 const other = (role: Role): Role => (role === 'sensor' ? 'studio' : 'sensor');
-const log = (room: string, text: string) =>
+/**
+ * Connection log: printed, and also appended to recordings/connection.log so a dropped
+ * phone can be diagnosed afterwards (who left, when, and why).
+ */
+const connLogFile = resolve(recordingsDir, 'connection.log');
+function writeConnLog(line: string) {
+  try {
+    mkdirSync(recordingsDir, { recursive: true });
+    appendFileSync(connLogFile, `${new Date().toISOString()} ${line}\n`);
+  } catch {
+    /* logging must never break the server */
+  }
+}
+const log = (room: string, text: string) => {
   console.log(`${new Date().toLocaleTimeString()} [room ${room}] ${text}`);
+  writeConnLog(`[room ${room}] ${text}`);
+};
 
 // ---------- http ----------
 const app = express();
@@ -87,6 +102,14 @@ app.post('/api/recordings', express.json({ limit: '4mb' }), (req, res) => {
   console.log(`Saved recording recordings/${name} (${body.samples.length} samples)`);
   res.json({ name });
 });
+/** The phone/laptop reports its own view of a dropped connection (sent over plain HTTP). */
+app.post('/api/clientlog', express.json({ limit: '64kb' }), (req, res) => {
+  const b = req.body as { role?: unknown; room?: unknown; events?: unknown };
+  const events = Array.isArray(b?.events) ? b.events.slice(-80) : [];
+  const who = `${String(b?.role).slice(0, 10)} room ${String(b?.room).slice(0, 8)}`;
+  writeConnLog(`[client ${who}] ${events.map((e) => String(e).slice(0, 200)).join(' | ')}`);
+  res.json({ ok: true });
+});
 app.post('/api/public-url', express.json(), (req, res) => {
   const ip = req.socket.remoteAddress ?? '';
   if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip) || req.headers['cf-connecting-ip']) {
@@ -123,6 +146,7 @@ const HEARTBEAT_MS = 10_000;
 setInterval(() => {
   for (const ws of wss.clients) {
     if (alive.get(ws) === false) {
+      writeConnLog(`[heartbeat] no pong for ${HEARTBEAT_MS / 1000} s: dropping a connection`);
       ws.terminate(); // triggers 'close', which tells the peer
       continue;
     }
@@ -131,9 +155,11 @@ setInterval(() => {
   }
 }, HEARTBEAT_MS).unref();
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   let roomCode: string | null = null;
   let role: Role | null = null;
+  const openedAt = Date.now();
+  const via = req.headers['cf-connecting-ip'] ? 'tunnel' : 'local';
 
   ws.on('message', (data) => {
     const msg = parseMessage(data.toString());
@@ -164,14 +190,17 @@ wss.on('connection', (ws) => {
       const room = rooms.get(code) ?? {};
       const existing = room[msg.role];
       // A newer connection replaces an old one (e.g. the phone reloaded the page).
-      if (existing && existing !== ws) existing.close(4000, 'replaced');
+      if (existing && existing !== ws) {
+        log(code, `${msg.role} replaced by a newer connection`);
+        existing.close(4000, 'replaced');
+      }
       room[msg.role] = ws;
       rooms.set(code, room);
       roomCode = code;
       role = msg.role;
 
       const peer = room[other(msg.role)];
-      log(code, `${msg.role} joined${peer ? ` (${other(msg.role)} already here)` : ''}`);
+      log(code, `${msg.role} joined via ${via}${peer ? ` (${other(msg.role)} already here)` : ''}`);
       send(ws, { type: 'hello', room: code, role: msg.role, peerConnected: !!peer });
       send(peer, { type: 'peer', connected: true, role: msg.role });
       return;
@@ -187,12 +216,16 @@ wss.on('connection', (ws) => {
   alive.set(ws, true);
   ws.on('pong', () => alive.set(ws, true));
 
-  ws.on('close', () => {
+  ws.on('close', (closeCode, reason) => {
     if (!roomCode || !role) return;
+    const why = `code ${closeCode}${reason.length ? ` "${reason.toString()}"` : ''}, after ${Math.round((Date.now() - openedAt) / 1000)} s, via ${via}`;
     const room = rooms.get(roomCode);
-    if (!room || room[role] !== ws) return;
+    if (!room || room[role] !== ws) {
+      writeConnLog(`[room ${roomCode}] old ${role} connection closed (${why})`);
+      return;
+    }
     delete room[role];
-    log(roomCode, `${role} left`);
+    log(roomCode, `${role} left (${why})`);
     send(room[other(role)], { type: 'peer', connected: false, role });
     if (!room.sensor && !room.studio) rooms.delete(roomCode);
   });
