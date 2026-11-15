@@ -81,3 +81,32 @@ test('one-leg mode set from the start counts each bump as two steps', () => {
     `${steps.length} vs ${walk.stepTimes.length}`,
   );
 });
+
+test('far leg barely felt (20% of the pocket leg): still counts both feet', () => {
+  for (const cadenceSpm of [60, 80, 105]) {
+    const { walk, steps, det } = run({
+      cadenceSpm,
+      seconds: 60,
+      farLeg: 0.2,
+      jitter: 0.06,
+      seed: 12,
+    });
+    assert.ok(
+      pct(steps.length, walk.stepTimes.length) <= 0.05,
+      `${cadenceSpm} spm: ${steps.length} vs ${walk.stepTimes.length}`,
+    );
+    assert.ok(pct(det.cadenceSpm!, cadenceSpm) <= 0.05, `cadence ${det.cadenceSpm}`);
+    assert.ok(
+      steps.every((s) => !s.inferred),
+      'faint steps are real bumps, not guesses',
+    );
+  }
+});
+
+test('faint-foot search does not add steps to a normal walk', () => {
+  const { walk, steps } = run({ cadenceSpm: 100, seconds: 60, farLeg: 0.8, seed: 13 });
+  assert.ok(
+    steps.length <= walk.stepTimes.length + 1,
+    `${steps.length} vs ${walk.stepTimes.length}`,
+  );
+});

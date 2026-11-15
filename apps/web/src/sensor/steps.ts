@@ -124,7 +124,8 @@ class StepTracker {
   private handleStep = (step: DetectedStep) => {
     this.recent.push(step);
     if (this.recent.length > 64) this.recent.shift();
-    if (this.tickOnStep && !step.inferred) this.tick();
+    // Faint steps found looking back arrive late: a tick now would be off, so skip it.
+    if (this.tickOnStep && !step.inferred && performance.now() - step.t < 250) this.tick();
     for (const fn of this.stepListeners) fn(step);
     this.publish();
   };

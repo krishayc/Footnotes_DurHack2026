@@ -120,6 +120,16 @@ docs/                research notes, HTTPS setup, demo script, pitch
   locked is 0.006.
 - A **timing correction** slider cancels constant delays (speakers, step detection).
 
+## Catching the far leg
+
+A phone in one pocket feels the far leg's footfall only faintly, so that bump can stay under
+the step threshold and every other step goes missing (dots every 1-2 beats). When two steps
+are about twice the usual step apart, the detector looks back between them for a smaller bump
+near the middle and counts it at its real time. It never invents a step where there is no bump.
+On simulated walks with the far leg at 20% of the pocket leg's strength, this raised the steps
+caught from about 55% to 99%, with no extra steps on normal walks or a still phone. These are
+simulated walks; a real pocket walk is still the test that matters.
+
 ## The music (adaptive arrangement)
 
 - **Fixed key and chords:** D major, a 4-bar loop **Dmaj7 → Bm7 → Gmaj7 → A7sus4** (the

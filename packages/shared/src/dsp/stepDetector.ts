@@ -24,6 +24,12 @@
  *                 each bump is a stride: we count two steps and add an "inferred" step halfway
  *                 between strides. ('auto' guesses from the gap size; it can't tell a slow
  *                 two-leg walk from a fast one-leg walk, so it is not the default.)
+ *  7b. Faint foot The phone in one pocket often feels the far leg only faintly, so its bump
+ *                 can stay under the threshold and every other step goes missing. When two
+ *                 accepted steps are about twice the usual step apart, we look back at the
+ *                 smoothed signal between them for a smaller bump near the middle. If one
+ *                 stands out from the noise, it is the other foot: we count it, at its real
+ *                 time. (No bump found = we don't invent one, unless legMode is 'one'.)
  *  8. Cadence     Steps per minute = 60000 / median gap between recent steps. The median
  *                 ignores the odd missed or extra step, unlike an average.
  */
@@ -96,6 +102,14 @@ const ONE_LEG_EXIT_MS = 850;
 /** A gap this long means the person stopped; start cadence afresh. */
 const PAUSE_MS = 2500;
 const INTERVAL_HISTORY = 10;
+/** Faint-foot search: never accept a bump smaller than this (m/s², filtered). */
+const FAINT_MIN_PROMINENCE = 0.2;
+/** ...or smaller than this fraction of a typical clear step. */
+const FAINT_REL_PROMINENCE = 0.12;
+/** Only search gaps up to this long (two slow steps). */
+const FAINT_MAX_GAP_MS = 3000;
+/** The faint bump must sit in the middle part of the gap (fraction of the gap). */
+const FAINT_WINDOW = [0.3, 0.7] as const;
 
 export class StepDetector {
   private s: StepDetectorSettings;
@@ -116,6 +130,12 @@ export class StepDetector {
   private trough = Infinity; // lowest value since the last peak ended
   private troughAtRise = 0;
   private lastPeakT: number | null = null;
+  /** Smoothed signal since the last accepted step: [t, value] pairs, for the faint-foot search. */
+  private recent: number[] = [];
+  /** Typical prominence of a clear step (running average). */
+  private typicalProm: number | null = null;
+  /** Recent step-to-step gaps after faint-foot filling (the real step rhythm). */
+  private stepIntervals: number[] = [];
 
   // Results.
   private peakIntervals: number[] = [];
@@ -149,8 +169,12 @@ export class StepDetector {
 
   /** Steps per minute from the median recent gap, or null if not enough steps yet. */
   get cadenceSpm(): number | null {
-    if (this.peakIntervals.length < 3) return null;
-    const stepMs = median(this.peakIntervals) / (this._oneLeg ? 2 : 1);
+    if (this._oneLeg) {
+      if (this.peakIntervals.length < 3) return null;
+      return 60000 / (median(this.peakIntervals) / 2);
+    }
+    if (this.stepIntervals.length < 3) return null;
+    const stepMs = median(this.stepIntervals);
     return 60000 / stepMs;
   }
 
@@ -162,7 +186,9 @@ export class StepDetector {
   resetCount() {
     this._count = 0;
     this.peakIntervals = [];
+    this.stepIntervals = [];
     this.lastPeakT = null;
+    this.recent = [];
   }
 
   /** Feed one accelerometer sample (t in ms, x/y/z in m/s² including gravity). */
@@ -184,6 +210,8 @@ export class StepDetector {
     this.lp1 += a * (dynamic - this.lp1);
     this.lp2 += a * (this.lp1 - this.lp2);
     const f = this.lp2;
+    this.recent.push(t, f);
+    if (this.recent.length > 2 * 400) this.recent.splice(0, this.recent.length - 2 * 400);
 
     // 4. Adaptive threshold from running mean and variance.
     const as = alphaFromTau(dt, STATS_TAU_S);
@@ -230,11 +258,29 @@ export class StepDetector {
     const gap = prevT === null ? null : peakT - prevT;
     this.lastPeakT = peakT;
 
-    if (gap !== null && gap > PAUSE_MS)
+    // 7b. Look for the faint other foot between the previous step and this one.
+    const faint =
+      prevT !== null && gap !== null && this.s.legMode !== 'one'
+        ? this.findFaintStep(prevT, peakT)
+        : null;
+    // Keep only the signal after this peak for the next search.
+    let cut = 0;
+    while (cut < this.recent.length && this.recent[cut] < peakT) cut += 2;
+    this.recent.splice(0, cut);
+    this.typicalProm =
+      this.typicalProm === null
+        ? prominence
+        : this.typicalProm + 0.2 * (prominence - this.typicalProm);
+
+    if (gap !== null && gap > PAUSE_MS) {
       this.peakIntervals = []; // they had stopped
-    else if (gap !== null) {
+      this.stepIntervals = [];
+    } else if (gap !== null) {
       this.peakIntervals.push(gap);
       if (this.peakIntervals.length > INTERVAL_HISTORY) this.peakIntervals.shift();
+      if (faint) this.stepIntervals.push(faint.t - prevT!, peakT - faint.t);
+      else this.stepIntervals.push(gap);
+      while (this.stepIntervals.length > INTERVAL_HISTORY) this.stepIntervals.shift();
     }
 
     // 7. Decide whether each peak is a step or a stride.
@@ -245,11 +291,50 @@ export class StepDetector {
     }
 
     const confidence = Math.max(0, Math.min(1, prominence / (threshold * 3)));
+    if (faint) {
+      this.emit({
+        t: faint.t - this.filterDelayMs,
+        n: ++this._count,
+        confidence: Math.max(0.05, Math.min(1, faint.prominence / (threshold * 3))),
+        inferred: false,
+      });
+    }
     if (this._oneLeg && gap !== null && gap <= PAUSE_MS) {
       // The other foot landed roughly halfway through the stride.
       this.emit({ t: t - gap / 2, n: ++this._count, confidence: 0, inferred: true });
     }
     this.emit({ t, n: ++this._count, confidence, inferred: false });
+  }
+
+  /**
+   * Between two accepted steps, find the clearest smaller bump near the middle. Only when the
+   * gap looks like two steps (about twice the usual step) or we don't know the rhythm yet.
+   */
+  private findFaintStep(prevT: number, peakT: number): { t: number; prominence: number } | null {
+    const gap = peakT - prevT;
+    if (gap > FAINT_MAX_GAP_MS || gap < 2 * this.s.refractoryMs) return null;
+    if (this.stepIntervals.length >= 3 && gap < 1.5 * median(this.stepIntervals)) return null;
+    const r = this.recent;
+    const lo = prevT + FAINT_WINDOW[0] * gap;
+    const hi = prevT + FAINT_WINDOW[1] * gap;
+    const minProm = Math.max(FAINT_MIN_PROMINENCE, FAINT_REL_PROMINENCE * (this.typicalProm ?? 0));
+    let best: { t: number; prominence: number } | null = null;
+    for (let i = 2; i + 2 < r.length; i += 2) {
+      const ti = r[i];
+      if (ti < lo) continue;
+      if (ti > hi) break;
+      const v = r[i + 1];
+      if (!(v >= r[i - 1] && v > r[i + 3])) continue; // not a local maximum
+      // Prominence: how far it rises above the lowest point on each side (within the gap).
+      let leftMin = v;
+      for (let j = i - 2; j >= 0 && r[j] >= prevT; j -= 2) leftMin = Math.min(leftMin, r[j + 1]);
+      let rightMin = v;
+      for (let j = i + 2; j < r.length && r[j] <= peakT; j += 2)
+        rightMin = Math.min(rightMin, r[j + 1]);
+      const prom = v - Math.max(leftMin, rightMin);
+      if (prom >= minProm && (!best || prom > best.prominence)) best = { t: ti, prominence: prom };
+    }
+    return best;
   }
 
   private emit(step: DetectedStep) {
