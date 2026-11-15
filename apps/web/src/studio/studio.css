@@ -1,6 +1,6 @@
 /*
  * The laptop Studio. An editorial, printed-programme feel rather than a dashboard:
- * no boxes, hairlines and generous space; serif numbers and italic labels; the score is the
+ * no boxes, hairlines and generous space; bold numbers and quiet labels; the score is the
  * hero. Colours come from tokens.css (deep greens, marigold, soft green for "on time").
  */
 
@@ -26,6 +26,7 @@
   align-items: center;
   gap: var(--s-3);
   font-size: 30px;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 .st-meta {
@@ -38,7 +39,6 @@
 }
 .st-room {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 18px;
 }
 .st-room b {
@@ -77,8 +77,6 @@
   align-items: center;
   gap: var(--s-3);
   font-family: var(--font-display);
-  font-style: italic;
-  font-variation-settings: 'SOFT' 100;
   font-weight: 500;
   font-size: clamp(24px, 2.4vw, 34px);
   line-height: 1.1;
@@ -203,13 +201,11 @@
   padding-top: 0;
 }
 
-/* Small italic labels instead of headings in boxes. */
+/* Quiet labels instead of headings in boxes. */
 .eyebrow,
 .panel__h {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 400;
-  font-variation-settings: 'SOFT' 100;
   font-size: 19px;
   letter-spacing: 0;
   color: var(--d-muted);
@@ -219,7 +215,6 @@
 /* In step */
 .instep__num {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-weight: 600;
   font-size: clamp(84px, 8vw, 124px);
   line-height: 0.92;
@@ -267,14 +262,12 @@
 }
 .figures dt {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 18px;
   color: var(--d-muted);
 }
 .figures dd {
   margin: 0;
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-weight: 600;
   font-size: 54px;
   line-height: 1;
@@ -325,7 +318,6 @@
 }
 .layers__count {
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--d-muted);
 }
 .chips {
@@ -348,7 +340,6 @@
   align-items: center;
   gap: var(--s-2);
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-size: 22px;
   color: #5f7a70;
   transition: color var(--t-med) var(--ease);
@@ -370,7 +361,6 @@
 }
 .chip--soon {
   color: var(--d-muted);
-  font-style: italic;
 }
 
 /* Text tabs (segmented choices) */
@@ -440,7 +430,6 @@
 }
 .beatline__label {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 17px;
   color: var(--d-muted);
 }
@@ -485,7 +474,6 @@
 }
 .ring__unit {
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--d-muted);
 }
 
@@ -532,7 +520,6 @@
   background: radial-gradient(circle at 40% 35%, rgba(242, 181, 68, 0.18), transparent 70%);
   color: var(--d-text);
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 24px;
   cursor: pointer;
   touch-action: manipulation;
@@ -568,7 +555,6 @@
 }
 .join__label {
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--d-muted);
   font-size: 17px;
 }
@@ -620,9 +606,8 @@
   gap: var(--s-2) var(--s-6);
 }
 .modebar::before {
-  content: 'steps from';
+  content: 'Steps from';
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--d-muted);
   font-size: 17px;
 }
@@ -728,7 +713,6 @@
 }
 .guide__head h2 {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 400;
   font-size: 16px;
   color: #5a645f;
@@ -744,14 +728,12 @@
 }
 .guide__title {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-size: 30px;
   font-weight: 600;
   line-height: 1.1;
 }
 .guide__say {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 19px;
   line-height: 1.45;
 }

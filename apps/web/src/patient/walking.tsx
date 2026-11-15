@@ -252,7 +252,7 @@ export function After({ go, id }: { go: Go; id?: string }) {
       <section className="pt__intro">
         <p className="pt__crumb">{dayLabel(w.startedAt)}</p>
         <h1>
-          That was a <span className="serif-i">lovely</span> walk.
+          That was a <span className="scribble">lovely</span> walk.
         </h1>
       </section>
       <figure className="pt__score">

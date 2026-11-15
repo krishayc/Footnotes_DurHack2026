@@ -108,12 +108,12 @@ export function StudioPage() {
       <header className="st-top">
         <span className="st-brand">
           <LogoMark size={30} color="var(--c-highlight)" />
-          <span className="serif-i">Footnotes</span>
+          <span className="display">Footnotes</span>
         </span>
         <div className="st-meta">
           <ConnectionStatus snap={live ? snap : null} mode={mode} />
           <span className="st-room">
-            room <b>{room}</b>
+            Room <b>{room}</b>
           </span>
         </div>
       </header>
@@ -147,14 +147,14 @@ export function StudioPage() {
           <InStep />
           <dl className="figures">
             <div>
-              <dt>their pace</dt>
+              <dt>Their pace</dt>
               <dd>
                 {stats.paceSpm ? Math.round(stats.paceSpm) : '–'}
                 <small>steps a minute</small>
               </dd>
             </div>
             <div>
-              <dt>the beat</dt>
+              <dt>The beat</dt>
               <dd>
                 {sess.phase === 'ready' ? sess.tempo : '–'}
                 <small>
@@ -189,7 +189,7 @@ export function StudioPage() {
 
       {sess.resumePending && a.status !== 'on' && (
         <button type="button" className="resume" onClick={() => void session.resume()}>
-          <span className="resume__title serif-i">Click anywhere to bring the music back</span>
+          <span className="resume__title display">Click anywhere to bring the music back</span>
           <span className="resume__sub">
             The page was refreshed. Your walk is saved: beat {sess.tempo} BPM.
           </span>

@@ -7,10 +7,10 @@ import { sync } from './sync';
 
 /** Plain words for the score, so the state never relies on colour or a number alone. */
 export function scoreWords(score: number): string {
-  if (score >= 0.8) return 'locked in';
-  if (score >= 0.6) return 'mostly in step';
-  if (score >= 0.35) return 'finding the beat';
-  return 'not in step yet';
+  if (score >= 0.8) return 'Locked in';
+  if (score >= 0.6) return 'Mostly in step';
+  if (score >= 0.35) return 'Finding the beat';
+  return 'Not in step yet';
 }
 
 // A gently wobbling line, like one drawn by hand (viewBox 0 0 300 24).
@@ -23,14 +23,14 @@ export function InStep() {
   return (
     <section className="instep" aria-labelledby="instep-h">
       <h2 id="instep-h" className="eyebrow">
-        in step
+        In step
       </h2>
       <p className="instep__num" aria-live="off">
         {s.active ? pct : '–'}
         {s.active && <span>%</span>}
       </p>
-      <p className="instep__words serif-i">
-        {s.active ? scoreWords(s.score) : 'the score starts with the beat'}
+      <p className="instep__words">
+        {s.active ? scoreWords(s.score) : 'The score starts with the beat'}
       </p>
       <svg
         className="instep__wave"

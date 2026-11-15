@@ -129,7 +129,7 @@ export function VisualScore() {
         // Lane label, always readable; dim when the layer is waiting.
         ctx.globalAlpha = 0.45 + 0.55 * a;
         ctx.fillStyle = lane.layer < 0 ? '#B9C7C0' : a > 0.5 ? lane.colour : '#4F6A60';
-        ctx.font = 'italic 400 16px "Fraunces Variable", Georgia, serif';
+        ctx.font = '600 14px "Bricolage Grotesque", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(lane.label, 10, box.y + 16);
         ctx.globalAlpha = 1;
@@ -199,7 +199,7 @@ export function VisualScore() {
 
       if (!playing) {
         ctx.fillStyle = '#B9C7C0';
-        ctx.font = 'italic 400 26px "Fraunces Variable", Georgia, serif';
+        ctx.font = '600 22px "Bricolage Grotesque", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('The score begins when the beat starts', w / 2, boxes[1].y + boxes[1].h / 2);
       }

@@ -41,9 +41,9 @@
 
   /* ---- type ---- */
   --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Headings and big numbers: Fraunces, a warm, slightly hand-made serif (its SOFT axis
-     rounds the corners). Body text stays Atkinson Hyperlegible for readability. */
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  /* Headings, big numbers and labels: Bricolage Grotesque, a clean modern sans with some
+     character. Body text stays Atkinson Hyperlegible for readability. */
+  --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
   --font-ui: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
   --fs-min: 18px; /* nothing on the phone goes below this */
   --fs-body: 20px;

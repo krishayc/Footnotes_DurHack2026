@@ -28,7 +28,6 @@ h2,
 h3 {
   font-family: var(--font-display);
   font-weight: 600;
-  font-variation-settings: 'SOFT' 100;
   line-height: var(--lh-tight);
   margin: 0;
   letter-spacing: -0.015em;
@@ -104,15 +103,9 @@ body::after {
   mix-blend-mode: screen;
 }
 
-/* Serif accents: italic for warmth (e.g. "lovely walk."). */
-.serif {
+/* Display font for a word or line inside body text. */
+.display {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
-}
-.serif-i {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-variation-settings: 'SOFT' 100;
 }
 
 /* A hand-drawn underline under a word. */

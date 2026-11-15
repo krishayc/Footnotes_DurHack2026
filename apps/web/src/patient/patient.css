@@ -448,9 +448,7 @@
   line-height: 1.04;
 }
 .pt .brand {
-  font-style: italic;
   font-weight: 600;
-  font-variation-settings: 'SOFT' 100;
 }
 
 /* Cards become open sections on the paper, divided by a hairline. */
@@ -490,7 +488,6 @@
 .pt .btn--hero .btn__title {
   font-family: var(--font-display);
   font-weight: 600;
-  font-variation-settings: 'SOFT' 100;
   font-size: 32px;
 }
 .pt__back {
@@ -507,14 +504,12 @@
   background: rgba(241, 243, 238, 0.08);
 }
 
-/* Small italic labels instead of bold grey ones. */
+/* Quiet labels instead of bold grey ones. */
 .pt__lastlabel,
 .pt__crumb,
 .walk__chipslabel {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 400;
-  font-variation-settings: 'SOFT' 100;
   font-size: 20px;
   color: var(--c-muted);
 }
@@ -524,7 +519,6 @@
 }
 .pt__lastline {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-size: 22px;
   line-height: 1.35;
 }
@@ -537,12 +531,10 @@
 /* After the walk: the numbers as a typeset list, not a table in a box. */
 .pt__stats dt {
   font-family: var(--font-display);
-  font-style: italic;
   color: var(--c-muted);
 }
 .pt__stats dd {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-weight: 600;
 }
 
@@ -557,7 +549,6 @@
 .pt__ringnum,
 .pt__countin {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-weight: 600;
 }
 .pt__stepcard strong {
@@ -569,7 +560,6 @@
 .pt__donebadge {
   border-radius: 999px 999px 999px 6px;
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 500;
 }
 
@@ -599,12 +589,10 @@
   border-color: var(--c-highlight);
 }
 .walk .chips--walk .chip--soon {
-  font-style: italic;
   color: var(--d-muted);
 }
 .walk__status {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
   font-weight: 500;
 }
 .walk .chips--walk {
@@ -639,9 +627,7 @@
 }
 .walk__time {
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 400;
-  font-variation-settings: 'SOFT' 100;
   font-size: 22px;
 }
 .walk .chips--walk .chip {

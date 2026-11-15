@@ -244,8 +244,8 @@ about 1 ms through a Cloudflare tunnel** with 40 to 80 ms round trips.
 ## Design
 
 **Look:** warm and printed rather than "app-like": paper grain, hairlines instead of boxes,
-**Fraunces** (a soft serif, bundled) for headings, numbers and italic labels, a hand-drawn
-marigold underline for emphasis, the QR code and demo guide as paper notes.
+**Bricolage Grotesque** (bundled) for headings, numbers and labels, a hand-drawn marigold
+underline for emphasis, the QR code and demo guide as paper notes.
 
 Built for people with Parkinson's: huge touch targets (84px minimum, 128px hero), 600ms tap
 debounce against tremor, text never below 18px, 4.5:1+ contrast, never colour alone, calm
