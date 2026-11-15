@@ -94,7 +94,7 @@ docs/                research notes, HTTPS setup, demo script, pitch
    steps (starting is the least typical part) and take the **median** gap between steps, so a
    missed or doubled step barely matters. Too few steps or very uneven timing gets a kind
    "let's try again" note.
-2. **Tempo = pace × (1 + offset)**, default +5%, adjustable 0 to +15%, clamped to 70 to 130 BPM.
+2. **Tempo = pace × (1 + offset)**, default +5%, adjustable 0 to +15%, clamped to 70 to 100 BPM (100 is our demo cap for a calm walking beat, not a research number; with no pace measured the beat is 90).
    "A bit slower / faster" nudges by 2 BPM; any change glides over 4 beats.
 3. **The beat leads.** Tone.js schedules each beat on the audio hardware clock, so it cannot
    waver even if the page is busy. Measured: beats exactly 594.059 ms apart at 101 BPM, spread

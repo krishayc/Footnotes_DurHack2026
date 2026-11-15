@@ -408,3 +408,21 @@
 .pt__top .pt__back {
   flex: none;
 }
+
+/* Step 2: "20 seconds done" must be unmissable when the phone comes out of the pocket. */
+.pt__donebadge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: 999px;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: var(--fs-body-lg);
+  font-weight: 800;
+}
+.pt__notes {
+  margin: 0;
+  padding-left: 1.2em;
+}

@@ -668,3 +668,84 @@
   gap: var(--s-4);
   flex-wrap: wrap;
 }
+
+/* Stage banner: which part of the walk we're in, readable from across the room. */
+.stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-5);
+  padding: var(--s-4) var(--s-7);
+  border-bottom: 2px solid var(--d-border);
+  background: var(--d-bg-1);
+  color: var(--d-text);
+  transition: background 0.4s ease;
+}
+.stage__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.stage__text {
+  font-size: 1.15rem;
+  color: var(--d-muted);
+}
+.stage--muted .stage__label {
+  color: var(--d-muted);
+}
+.stage--measure .stage__label {
+  color: var(--c-highlight);
+}
+.stage--waiting {
+  background: #2a2614;
+}
+.stage--waiting .stage__label {
+  color: var(--c-highlight);
+}
+.stage--waiting .stage__text {
+  color: var(--d-text);
+}
+.stage--live .stage__label {
+  color: var(--d-on-time);
+}
+.stage__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--d-on-time);
+  animation: stage-pulse 1.4s ease-in-out infinite;
+}
+.stage--flash {
+  background: var(--d-on-time);
+}
+.stage--flash .stage__label,
+.stage--flash .stage__text {
+  color: #10221b;
+}
+.stage--flash .stage__dot {
+  background: #10221b;
+}
+@keyframes stage-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage__dot {
+    animation: none;
+  }
+  .stage {
+    transition: none;
+  }
+}
+@media (max-width: 700px) {
+  .stage {
+    padding: var(--s-3) var(--s-4);
+  }
+  .stage__label {
+    font-size: 1.25rem;
+  }
+}

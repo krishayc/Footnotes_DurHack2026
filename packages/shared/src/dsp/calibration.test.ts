@@ -14,10 +14,10 @@ const steps = (spm: number, n: number, jitter = 0, seed = 1) => {
   return out;
 };
 
-test('steady 96 spm walk gives 96 baseline and a +5% beat of 101', () => {
-  const r = calibrate(steps(96, 32));
-  assert.equal(Math.round(r.cadenceSpm!), 96);
-  assert.equal(r.tempoBpm, 101);
+test('steady 86 spm walk gives 86 baseline and a +5% beat of 90', () => {
+  const r = calibrate(steps(86, 32));
+  assert.equal(Math.round(r.cadenceSpm!), 86);
+  assert.equal(r.tempoBpm, 90);
   assert.equal(r.reliable, true);
 });
 
@@ -48,6 +48,12 @@ test('very irregular steps are flagged', () => {
 });
 
 test('offset is applied', () => {
-  assert.equal(calibrate(steps(100, 32), 0.1).tempoBpm, 110);
-  assert.equal(calibrate(steps(100, 32), 0).tempoBpm, 100);
+  assert.equal(calibrate(steps(80, 32), 0.1).tempoBpm, 88);
+  assert.equal(calibrate(steps(80, 32), 0).tempoBpm, 80);
+});
+
+test('a fast pace is capped at 100 BPM for the demo, and says so', () => {
+  const r = calibrate(steps(115, 32));
+  assert.equal(r.tempoBpm, 100);
+  assert.equal(r.clamped, true);
 });

@@ -8,14 +8,17 @@
  *  - Tempo = baseline × (1 + offset). Default offset +5% (adjustable 0 to +15%): a beat just
  *    above natural pace, as in Rhythmic Auditory Stimulation. Studies use a range of offsets;
  *    there is no single proven best value (see README, "to verify").
- *  - Tempo is clamped to 70 to 130 BPM so a strange reading can never produce a silly beat.
+ *  - Tempo is clamped to 70 to 100 BPM so a strange reading can never produce a silly beat.
+ *    The 100 cap is our demo choice (a calm walking beat), not a number from a study.
  *  - We flag the result as unreliable (with a kind, specific reason) if there were too few
  *    steps or the timing was very irregular, so the Studio can suggest trying again.
  */
 import { median } from './stats';
 
 export const TEMPO_MIN = 70;
-export const TEMPO_MAX = 130;
+export const TEMPO_MAX = 100;
+/** Beat used when no pace could be measured, or when calibration is skipped. */
+export const FALLBACK_TEMPO = 90;
 export const DEFAULT_OFFSET = 0.05;
 export const OFFSET_MIN = 0;
 export const OFFSET_MAX = 0.15;
@@ -28,7 +31,7 @@ const MAX_IRREGULARITY = 0.25;
 export interface CalibrationResult {
   /** Baseline pace, steps per minute (null if not enough steps). */
   cadenceSpm: number | null;
-  /** Beat tempo, BPM (clamped). Falls back to 100 if no pace could be measured. */
+  /** Beat tempo, BPM (clamped). Falls back to FALLBACK_TEMPO if no pace could be measured. */
   tempoBpm: number;
   stepsUsed: number;
   /** Step-to-step variability: std / mean of the gaps (0 = metronomic). */
@@ -62,7 +65,7 @@ export function calibrate(
     notes.push('We only felt a few steps. Try walking for the whole 20 seconds.');
     return {
       cadenceSpm: gaps.length >= 3 ? 60000 / median(gaps) : null,
-      tempoBpm: 100,
+      tempoBpm: FALLBACK_TEMPO,
       stepsUsed: used.length,
       irregularity: null,
       reliable: false,

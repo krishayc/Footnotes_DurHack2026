@@ -7,7 +7,7 @@
  * phone's pulsing circle lands exactly on the beat the laptop plays.
  */
 import { LAYER_UP, type WalkStateMsg } from '@footnotes/shared';
-import { CALIBRATION_MS } from '@footnotes/shared';
+import { CALIBRATION_MS, FALLBACK_TEMPO } from '@footnotes/shared';
 import { audio } from './audio/engine';
 import { LAYER_NAMES } from './music/band';
 import { arranger } from './music/arranger';
@@ -75,7 +75,7 @@ export function startWalkBridge(link: StudioLink) {
           session.cancelCalibration();
           break;
         case 'startBeat':
-          if (session.state.get().phase !== 'ready') session.useFixedTempo(100);
+          if (session.state.get().phase !== 'ready') session.useFixedTempo(FALLBACK_TEMPO);
           if (!audio.state.get().playing) session.startBeat();
           break;
         case 'stopBeat':

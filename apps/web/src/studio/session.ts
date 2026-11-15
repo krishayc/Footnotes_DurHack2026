@@ -5,7 +5,7 @@
  *                                                               │
  *                                         Start the beat ◀──────┘  (L0 pulse plays)
  *
- * Tempo = baseline pace × (1 + offset), clamped to 70–130 BPM. After calibration the tempo
+ * Tempo = baseline pace × (1 + offset), clamped to 70–100 BPM. After calibration the tempo
  * only changes when a person deliberately asks (offset slider, a bit slower / faster), and
  * then it glides over 4 beats. It never reacts to individual steps.
  */
@@ -75,7 +75,7 @@ class Session {
     result: null,
     baseline: live?.baseline ?? null,
     offset: saved.offset,
-    tempo: live?.tempo ?? 100,
+    tempo: Math.min(TEMPO_MAX, live?.tempo ?? 90),
     manual: live?.manual ?? false,
     resumePending: !!live?.playing,
   });
@@ -151,7 +151,7 @@ class Session {
   }
 
   /** Skip calibration: use a fixed tempo (demo safety net, or a physio-set pace). */
-  useFixedTempo(tempo = 100) {
+  useFixedTempo(tempo = 90) {
     this.cancelCalibration();
     const baseline = tempo / (1 + this.state.get().offset);
     this.state.set({ phase: 'ready', baseline, tempo, result: null, manual: true });

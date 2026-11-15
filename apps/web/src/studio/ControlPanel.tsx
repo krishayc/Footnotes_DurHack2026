@@ -2,7 +2,7 @@
  * The Studio's main controls: turn on sound, find the walker's pace, start the steady beat.
  */
 import { useEffect, useState } from 'react';
-import { CALIBRATION_MS, OFFSET_MAX, OFFSET_MIN } from '@footnotes/shared';
+import { CALIBRATION_MS, FALLBACK_TEMPO, OFFSET_MAX, OFFSET_MIN } from '@footnotes/shared';
 import { Button } from '../ui/Button';
 import { useStore } from '../shared/store';
 import { audio } from './audio/engine';
@@ -54,8 +54,8 @@ export function ControlPanel() {
         <Button variant="highlight" onClick={() => session.startCalibration()}>
           Find their pace
         </Button>
-        <Button variant="secondary" onClick={() => session.useFixedTempo(100)}>
-          Skip: use 100 beats a minute
+        <Button variant="secondary" onClick={() => session.useFixedTempo(FALLBACK_TEMPO)}>
+          Skip: use {FALLBACK_TEMPO} beats a minute
         </Button>
       </section>
     );

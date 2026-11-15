@@ -7,6 +7,7 @@ import { useStore } from '../shared/store';
 import type { LinkSnapshot } from '../shared/connection';
 import { motion } from '../sensor/motion';
 import { wakeLock } from '../sensor/wakeLock';
+import { buzz } from '../shared/haptic';
 import { sendWalkCommand, walk } from '../sensor/link';
 import { useSteps } from '../sensor/steps';
 import { walks, dayLabel, walkLine } from './history';
@@ -215,8 +216,11 @@ export function Step1({ go, link }: { go: Go; link: LinkSnapshot | null }) {
     if (st?.phase === 'calibrating') wasCalibrating.current = true;
     if (phase === 'measuring' && wasCalibrating.current && st?.phase === 'ready') {
       wasCalibrating.current = false;
+      // Make the end impossible to miss, with the phone still in the pocket:
+      // a long buzz (Android), a chime, and a spoken instruction.
+      buzz([400, 150, 400]);
       chime();
-      speak('All done. Your beat is ready.');
+      speak('Done. You can stop walking. Take your phone out to start the main walk.');
       go('step2');
     }
   }, [st?.phase, phase, go]);
@@ -382,11 +386,26 @@ export function BeatPulse({ size = 180, dark = false }: { size?: number; dark?: 
 export function Step2({ go }: { go: Go }) {
   const { state: st } = useStore(walk);
   const tempo = st?.tempo ?? 0;
+  const notes = st?.calNotes ?? [];
 
-  // Play the beat so they can hear it (the laptop plays it; we ask once).
-  useStartBeatOnce();
+  // Not taken the phone out yet? Remind them once, gently, after 12 s.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      buzz(300);
+      chime();
+      speak('Take your phone out and press Start the main walk.');
+    }, 12_000);
+    return () => window.clearTimeout(id);
+  }, []);
 
-  const speech = `Your beat: ${tempo} steps a minute. Put the phone in your pocket and walk along to the beat. Press Start walking when you're ready.`;
+  const startMain = () => {
+    startSensing();
+    sendWalkCommand('startBeat');
+    speak('Starting. Phone in your pocket, and walk along to the beat.');
+    go('walking');
+  };
+
+  const speech = `Done, your pace is found. Your beat is ${tempo} steps a minute. Now the main walk: press Start the main walk, put the phone back in your pocket, and walk along to the beat.`;
   return (
     <Screen
       speech={speech}
@@ -396,28 +415,35 @@ export function Step2({ go }: { go: Go }) {
         go('step1');
       }}
     >
-      <section className="pt__intro">
-        <h1>Your beat is ready</h1>
+      <section className="pt__intro pt__done" role="status" aria-live="assertive">
+        <p className="pt__donebadge">
+          <span aria-hidden="true">✓</span> 20 seconds done
+        </p>
+        <h1>Pace found. Now the main walk.</h1>
         <p className="pt__lead">
           Your beat: <strong>{tempo} steps a minute</strong>
           {st?.baseline ? `, a little quicker than your ${Math.round(st.baseline)}.` : '.'}
         </p>
       </section>
-      <div className="pt__ringwrap">
-        <BeatPulse />
-      </div>
+      {notes.length > 0 && (
+        <ul className="pt__note pt__notes">
+          {notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
+      )}
       {!st?.audioOn && (
         <p className="pt__note" role="status">
           Ask someone to press Start audio on the laptop so you can hear the beat.
         </p>
       )}
-      <Button hero onClick={() => go('walking')}>
+      <Button hero onClick={startMain}>
         <span className="btn__disc">
           <IconPlay />
         </span>
         <span className="btn__text">
-          <span className="btn__title">Start walking</span>
-          <span className="btn__sub">Phone in your pocket, walk along to the beat</span>
+          <span className="btn__title">Start the main walk</span>
+          <span className="btn__sub">The beat starts. Phone back in your pocket.</span>
         </span>
       </Button>
       <div className="pt__pair">
@@ -428,6 +454,9 @@ export function Step2({ go }: { go: Go }) {
           A bit faster
         </Button>
       </div>
+      <Button variant="secondary" onClick={() => go('step1')}>
+        Measure my pace again
+      </Button>
     </Screen>
   );
 }

@@ -49,7 +49,6 @@ export function Walking({ go }: { go: Go }) {
       window.clearInterval(id);
       cancelAnimationFrame(raf.current);
     };
-     
   }, []);
 
   // Make sure the beat is playing (e.g. if Step 2 was skipped), asking only once.

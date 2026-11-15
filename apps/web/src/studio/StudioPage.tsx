@@ -17,6 +17,7 @@ import { useStudioStats } from './useStudioStats';
 import { UnderTheHood } from './UnderTheHood';
 import { VisualScore } from './VisualScore';
 import { startWalkBridge } from './walkBridge';
+import { StageBanner } from './StageBanner';
 import '../ui/ui.css';
 import './studio.css';
 
@@ -119,6 +120,7 @@ export function StudioPage() {
           </span>
         </div>
       </header>
+      <StageBanner />
 
       <main className="studio__body">
         <section className="studio__stage" aria-label="The score, live">
